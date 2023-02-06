@@ -27,6 +27,7 @@ public class MainApplication extends Application implements ReactApplication {
             // packages.add(new MyReactNativePackage());
             //packages.add(new VectorIconsPackage());
             //packages.add(new VdocipherRnBridgePackage());
+            packages.add(new ExamplePackage());
             return packages;
         }
 

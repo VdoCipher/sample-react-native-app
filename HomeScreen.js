@@ -11,7 +11,8 @@
    StyleSheet,
    Text,
    Button,
-   View
+   View,
+   NativeModules
  } from 'react-native';
  import { startVideoScreen } from 'vdocipher-rn-bridge';
  
@@ -27,7 +28,7 @@
      console.log('HomeScreen did mount');
      fetch("https://dev.vdocipher.com/api/site/homepage_video")
        .then(res => res.json())
-       .then(resp => this.setState({otp: "20160313versASE323WnGTFV06zFoQdBkWO59LyjjYBISl5p5w7LJaaDzQhe5Sos", playbackInfo: "eyJ2aWRlb0lkIjoiY2M2ZDhlMjc3NzE4NDI0NWE0M2E1NmM4ZDhlNGYwZjMifQ=="}));
+       .then(resp => this.setState({otp: resp.otp, playbackInfo: resp.playbackInfo}));
    }
  
    componentWillUnmount() {
@@ -75,6 +76,14 @@
             title='Downloads'
             onPress={
               () => this.props.navigation.navigate('Downloads')
+            }
+          />
+        </View>
+        <View style={styles.buttonContainer}>
+          <Button
+            title='Open Pip in new Activity'
+            onPress={
+              () => NativeModules.PipActivityM.openPipActivity()
             }
           />
         </View>
