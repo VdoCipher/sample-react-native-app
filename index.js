@@ -3,8 +3,8 @@
  */
 
 import { AppRegistry } from 'react-native';
-import Pip from './Pip';
+import PlayerActivity from './PlayerActivity';
 import App from './App';
 
 AppRegistry.registerComponent('example', () => App);
-AppRegistry.registerComponent('pip', () => Pip);
+AppRegistry.registerComponent('player', () => PlayerActivity);

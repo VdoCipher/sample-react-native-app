@@ -8,22 +8,22 @@ import com.facebook.react.uimanager.annotations.ReactProp;
 import android.content.Intent;
 import android.app.Activity;
 
-public class PipActivityModule extends ReactContextBaseJavaModule {
-    private static final String TAG = "PipActivityModule";
+public class PlayerActivityModule extends ReactContextBaseJavaModule {
+    private static final String TAG = "PlayerActivityModule";
 
     @Override
     public String getName() {
-        return "PipActivityM";
+        return "PlayerActivityM";
     }
 
-    public PipActivityModule(ReactApplicationContext reactContext) {
+    public PlayerActivityModule(ReactApplicationContext reactContext) {
         super(reactContext);
     }
 
     @ReactMethod
-    public void openPipActivity() {
+    public void openPlayerActivity() {
         Activity currentActivity = getCurrentActivity();
-        Intent intent = PipActivity.getStartIntent(currentActivity);
+        Intent intent = PlayerActivity.getStartIntent(currentActivity);
         currentActivity.startActivity(intent);
     }
 }

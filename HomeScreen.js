@@ -79,11 +79,13 @@
             }
           />
         </View>
+        {/* This button is used to show how to open player in new activity so that when player 
+        goes in pip mode, the previous activity(screen) is still visible/browsable */}
         <View style={styles.buttonContainer}>
           <Button
-            title='Open Pip in new Activity'
+            title='Open Player in new Activity'
             onPress={
-              () => NativeModules.PipActivityM.openPipActivity()
+              () => NativeModules.PlayerActivityM.openPlayerActivity()
             }
           />
         </View>

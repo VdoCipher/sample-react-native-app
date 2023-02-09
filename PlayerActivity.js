@@ -6,24 +6,25 @@ import {
 } from 'react-native';
 import { VdoPlayerView } from 'vdocipher-rn-bridge';
 
-export default class Pip extends Component {
+// Entry point for PlayerActivity, used to open payer in new activity
+export default class PlayerActivity extends Component {
   constructor(props) {
     super(props);
     this.state = {
       isFullscreen: false
     }
-    console.log('Pip contructor');
+    console.log('PlayerActivity contructor');
   }
 
   componentDidMount() {
-    console.log('Pip did mount');
+    console.log('PlayerActivity did mount');
     fetch("https://dev.vdocipher.com/api/site/homepage_video")
        .then(res => res.json())
        .then(resp => this.setState({otp:resp.otp, playbackInfo: resp.playbackInfo}));
   }
 
   componentWillUnmount() {
-    console.log('Pip will unmount');
+    console.log('PlayerActivity will unmount');
   }
 
   _onEnterFullscreen = () => {
