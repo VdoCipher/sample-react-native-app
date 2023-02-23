@@ -2,7 +2,7 @@
  * @format
  */
 
-import { AppRegistry } from 'react-native';
+import {AppRegistry} from 'react-native';
 import PlayerActivity from './PlayerActivity';
 import App from './App';
 

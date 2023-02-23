@@ -1,18 +1,23 @@
-import React, { Component } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View
-} from 'react-native';
+import React, {Component} from 'react';
+import {StyleSheet, Text, View} from 'react-native';
 import VdoPlayerControls from './VdoPlayerControls';
+import {NativeStackScreenProps} from '@react-navigation/native-stack';
+import { RootStackParamList } from './type';
 
-export default class JSControlsScreen extends Component {
-  constructor(props) {
+type Props = NativeStackScreenProps<RootStackParamList, 'JSControls'>;
+
+type State = {
+  isFullscreen: boolean;
+  isInPictureInPictureMode: boolean;
+};
+
+export default class JSControlsScreen extends Component<Props, State> {
+  constructor(props: Props) {
     super(props);
     this.state = {
       isFullscreen: false,
-      isInPictureInPictureMode: false
-    }
+      isInPictureInPictureMode: false,
+    };
     console.log('JSControlsScreen contructor');
   }
 
@@ -26,17 +31,17 @@ export default class JSControlsScreen extends Component {
 
   _onEnterFullscreen = () => {
     this.setState({isFullscreen: true});
-  }
+  };
 
   _onExitFullscreen = () => {
     this.setState({isFullscreen: false});
-  }
+  };
 
-  _onPictureInPictureModeChanged = (isInPictureInPictureMode) => {
+  _onPictureInPictureModeChanged = (isInPictureInPictureMode: boolean) => {
     this.setState({
       isInPictureInPictureMode: isInPictureInPictureMode,
     });
-  }
+  };
 
   render() {
     const embedInfo = this.props.route.params.embedInfo;
@@ -45,26 +50,35 @@ export default class JSControlsScreen extends Component {
 
     return (
       <View style={styles.container}>
-        <VdoPlayerControls style={(isFullscreen || isInPictureInPictureMode) ? styles.playerFullscreen : styles.player}
+        <VdoPlayerControls
+          style={
+            isFullscreen || isInPictureInPictureMode
+              ? styles.playerFullscreen
+              : styles.player
+          }
           embedInfo={embedInfo}
           showNativeControls={false}
           onInitializationSuccess={() => console.log('init success')}
           onInitializationFailure={() => console.log('init failure')}
-          onLoading={(args) => console.log('loading')}
-          onLoaded={(args) => console.log('loaded')}
-          onLoadError={({errorDescription}) => console.log('load error', errorDescription)}
-          onError={({errorDescription}) => console.log('error', errorDescription)}
-          onTracksChanged={(args) => console.log('tracks changed')}
-          onMediaEnded={(args) => console.log('ended')}
+          onLoading={(args: any) => console.log('loading')}
+          onLoaded={(args: any) => console.log('loaded')}
+          onLoadError={({errorDescription}: any) =>
+            console.log('load error', errorDescription)
+          }
+          onError={({errorDescription}: any) =>
+            console.log('error', errorDescription)
+          }
+          onTracksChanged={(args: any) => console.log('tracks changed')}
+          onMediaEnded={(args: any) => console.log('ended')}
           onEnterFullscreen={this._onEnterFullscreen}
           onExitFullscreen={this._onExitFullscreen}
           onPictureInPictureModeChanged={this._onPictureInPictureModeChanged}
         />
-        { !isFullscreen &&
-        <Text style={styles.description}>
-          The ui controls for the player are react-native components
-        </Text>
-        }
+        {!isFullscreen && (
+          <Text style={styles.description}>
+            The ui controls for the player are react-native components
+          </Text>
+        )}
       </View>
     );
   }
