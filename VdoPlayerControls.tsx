@@ -6,14 +6,14 @@ import MatIcon from 'react-native-vector-icons/MaterialIcons';
 import Icon from 'react-native-vector-icons/FontAwesome';
 // @ts-ignore
 import DialogAndroid from 'react-native-dialogs';
-import { ErrorDescription, PlayerControlsPropTypes } from './type';
-import { Track, MediaInfo, CaptionLanguage, VideoQuality } from 'vdocipher-rn-bridge/type';
+import { ErrorDescription } from './type';
+import { Track, MediaInfo, CaptionLanguage, VideoQuality, VdoPropTypes } from 'vdocipher-rn-bridge/type';
 
 function digitalTime(time: number) {
   return ~~(time / 60) + ':' + (time % 60 < 10 ? '0' : '') + (time % 60);
 }
 
-const MyPropTypes = PlayerControlsPropTypes;
+const MyPropTypes = VdoPropTypes;
 
 type Props = InferProps<typeof MyPropTypes>;
 

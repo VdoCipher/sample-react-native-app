@@ -31,6 +31,8 @@ public class MainActivity extends ReactActivity {
     protected void onUserLeaveHint() {
         super.onUserLeaveHint();
 //        switch to PiP mode if the user presses the home or recent button,
+//        Adding fragment check to ensure only the screen with player fragment can go into pip, remove this check
+//        if other screens can/should also go into pip mode
             Fragment vdoPlayerFragment = getSupportFragmentManager().findFragmentByTag("VdoPlayerUIFragmentRN");
             if (vdoPlayerFragment != null && vdoPlayerFragment.isVisible()) {
                 enterPictureInPictureMode(new PictureInPictureParams.Builder().build());

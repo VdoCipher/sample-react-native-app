@@ -6,17 +6,12 @@ import { RootStackParamList } from './type';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'NativeControls'>;
 
-type State = {
-  isFullscreen: boolean;
-};
+type State = {};
 
 export default class NativeControlsScreen extends Component<Props, State> {
   _player: any;
   constructor(props: Props) {
     super(props);
-    this.state = {
-      isFullscreen: false,
-    };
     console.log('NativeControlsScreen contructor');
   }
 
@@ -28,25 +23,14 @@ export default class NativeControlsScreen extends Component<Props, State> {
     console.log('NativeControlsScreen will unmount');
   }
 
-  _onEnterFullscreen = () => {
-    console.log('onEnterFullscreen');
-    this.setState({isFullscreen: true});
-  };
-
-  _onExitFullscreen = () => {
-    console.log('onExitFullscreen');
-    this.setState({isFullscreen: false});
-  };
-
   render() {
     const embedInfo = this.props.route.params.embedInfo;
-    var isFullscreen = this.state.isFullscreen;
-
+    
     return (
       <View style={styles.container}>
         <VdoPlayerView
           ref={(player: any) => (this._player = player)}
-          style={isFullscreen ? styles.playerFullscreen : styles.player}
+          style={styles.player}
           embedInfo={embedInfo}
           onInitializationSuccess={() => console.log('init success')}
           onInitializationFailure={(error: any) =>
@@ -65,14 +49,12 @@ export default class NativeControlsScreen extends Component<Props, State> {
             console.log('speed changed to', speed)
           }
           onMediaEnded={(args: any) => console.log('ended')}
-          onEnterFullscreen={this._onEnterFullscreen}
-          onExitFullscreen={this._onExitFullscreen}
+          onEnterFullscreen={() => console.log('onEnterFullscreen')}
+          onExitFullscreen={() => console.log('onExitFullscreen')}
         />
-        {!isFullscreen && (
-          <Text style={styles.description}>
-            The ui controls for the player are embedded inside the native view
-          </Text>
-        )}
+        <Text style={styles.description}>
+          The ui controls for the player are embedded inside the native view
+        </Text>
       </View>
     );
   }
@@ -85,12 +67,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5FCFF',
   },
   player: {
-    height: 200,
+    height: 'auto',
     width: '100%',
-  },
-  playerFullscreen: {
-    height: '100%',
-    width: '100%',
+    resizeMode: 'contain'
   },
   description: {
     fontSize: 20,

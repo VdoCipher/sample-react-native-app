@@ -1,5 +1,4 @@
 import { EmbedInfo, OfflineEmbedInfo } from "vdocipher-rn-bridge/type";
-import PropTypes from 'prop-types';
 
 export type DownloadData = {
   mediaId: string;
@@ -13,12 +12,6 @@ export type RootStackParamList = {
   NativeControls: {embedInfo: EmbedInfo | OfflineEmbedInfo};
   JSControls: {embedInfo: EmbedInfo | OfflineEmbedInfo};
   Downloads: undefined; 
-}
-
-export const PlayerControlsPropTypes = {
-  onEnterFullscreen: PropTypes.func,
-  onExitFullscreen: PropTypes.func,
-  onPictureInPictureModeChanged: PropTypes.func,
 }
 
 export type ErrorDescription = {

@@ -1,6 +1,7 @@
 import React, {Component} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 import {VdoPlayerView} from 'vdocipher-rn-bridge';
+import { EmbedInfo } from 'vdocipher-rn-bridge/type';
 
 type Props = {};
 
@@ -38,7 +39,7 @@ export default class PlayerActivity extends Component<Props, State> {
   };
 
   render() {
-    const embedInfo = {otp: "20160313versASE323WnGTFV06zFoQdBkWO59LyjjYBISl5p5w7LJaaDzQhe5Sos", playbackInfo: "eyJ2aWRlb0lkIjoiY2M2ZDhlMjc3NzE4NDI0NWE0M2E1NmM4ZDhlNGYwZjMifQ", setPictureInPictureSupport: true};
+    const embedInfo: EmbedInfo = {otp: "20160313versASE323WnGTFV06zFoQdBkWO59LyjjYBISl5p5w7LJaaDzQhe5Sos", playbackInfo: "eyJ2aWRlb0lkIjoiY2M2ZDhlMjc3NzE4NDI0NWE0M2E1NmM4ZDhlNGYwZjMifQ"};
     var isFullscreen = this.state.isFullscreen;
 
     return (
