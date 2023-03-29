@@ -164,7 +164,7 @@ export default class DownloadsScreen extends Component<Props, State> {
 
   _enqueueDownload(otp: string, playbackInfo: string) {
     console.log('enqueue download');
-    VdoDownload.getDownloadOptions({otp, playbackInfo})
+    VdoDownload.getDownloadOptions({otp, playbackInfo /* ,customPlayerId: "avaI83RCHxfvLwhC"*/})
       .then(({downloadOptions, enqueue}: {downloadOptions: DownloadOptions, enqueue: (downloadSelections: {selections: Array<number>}) => void}) => {
         console.log('Got options', downloadOptions);
         const selections = this._getSelection(downloadOptions.availableTracks);
