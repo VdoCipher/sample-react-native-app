@@ -66,7 +66,6 @@ export default class VdoPlayerControls extends Component<Props, State> {
     this.setState({
       init: true,
     });
-    this._isCaptionLanguageAvailable();
   };
 
   _onInitFailure = (error: {errorDescription: ErrorDescription}) => {
@@ -94,6 +93,8 @@ export default class VdoPlayerControls extends Component<Props, State> {
       }),
       10000,
     );
+
+    this._isCaptionLanguageAvailable();
   };
 
   _onTracksChanged = (tracks: {availableTracks: Array<Track>, selectedTracks: Array<Track>}) => {
@@ -175,7 +176,7 @@ export default class VdoPlayerControls extends Component<Props, State> {
     this._player
       .getCaptionLanguages()
       .then(async (captionLanguages: Array<CaptionLanguage>) => {
-        if (captionLanguages.length == 0) {
+        if (captionLanguages.length > 0) {
           this.setState({
             isCaptionLanguageAvailable: true
           })
