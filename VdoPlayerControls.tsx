@@ -7,7 +7,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 // @ts-ignore
 import DialogAndroid from 'react-native-dialogs';
 import { ErrorDescription } from './type';
-import { Track, MediaInfo, CaptionLanguage, VideoQuality, VdoPropTypes } from 'vdocipher-rn-bridge/type';
+import { Track, MediaInfo, CaptionLanguage, VideoQuality, VdoPropTypes, PlaybackProperty } from 'vdocipher-rn-bridge/type';
 
 function digitalTime(time: number) {
   return ~~(time / 60) + ':' + (time % 60 < 10 ? '0' : '') + (time % 60);
@@ -88,7 +88,10 @@ export default class VdoPlayerControls extends Component<Props, State> {
       duration: metaData.mediaInfo.duration / 1000,
     });
     this.propInterval = setInterval(
-      () => this._player.getPlaybackProperties(),
+      () => this._player.getPlaybackPropertiesV2().then((playbackProperties: PlaybackProperty) => {
+        console.log("tp:", playbackProperties.totalPlayed);
+        console.log("tc: ",playbackProperties.totalCovered);
+      }),
       10000,
     );
   };
@@ -114,11 +117,6 @@ export default class VdoPlayerControls extends Component<Props, State> {
       position: newPosition,
       seekbarPosition,
     });
-  };
-
-  _onPlaybackProperties = (properties: {totalPlayed: number, totalCovered: number}) => {
-    console.log('total played', properties.totalPlayed);
-    console.log('total covered', properties.totalCovered);
   };
 
   _onPlayButtonTouch = () => {
@@ -332,7 +330,6 @@ export default class VdoPlayerControls extends Component<Props, State> {
           onTracksChanged={this._onTracksChanged}
           onPlayerStateChanged={this._onPlayerStateChanged}
           onProgress={this._onProgress}
-          onPlaybackProperties={this._onPlaybackProperties}
           onEnterFullscreen={this._onEnterFullscreen}
           onExitFullscreen={this._onExitFullscreen}
           onPictureInPictureModeChanged={this._onPictureInPictureModeChanged}
