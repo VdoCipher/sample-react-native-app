@@ -66,6 +66,7 @@ export default class VdoPlayerControls extends Component<Props, State> {
     this.setState({
       init: true,
     });
+    this._isCaptionLanguageAvailable();
   };
 
   _onInitFailure = (error: {errorDescription: ErrorDescription}) => {
