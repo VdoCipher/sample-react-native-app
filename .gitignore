@@ -63,3 +63,5 @@ buck-out/
 # Android js bundle
 **/assets/index.android.bundle
 **/assets/index.android.bundle.meta
+
+.vscode/

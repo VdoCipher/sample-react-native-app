@@ -46,7 +46,7 @@ export default class HomeScreen extends Component<Props, State> {
   render() {
     var ready = this.state.otp != '';
     const {otp, playbackInfo} = this.state;
-    const embedInfo: EmbedInfo = {otp, playbackInfo, setPictureInPictureSupport: true};
+    const embedInfo: EmbedInfo = {otp, playbackInfo};
     return (
       <View style={styles.container}>
         <Text style={styles.welcome}>
@@ -56,7 +56,7 @@ export default class HomeScreen extends Component<Props, State> {
           <Button
             disabled={!ready}
             title={ready ? 'Start video in native fullscreen' : 'Loading...'}
-            onPress={() => startVideoScreen({embedInfo})}
+            onPress={() => startVideoScreen({embedInfo}, true)}
           />
         </View>
         <View style={styles.buttonContainer}>
