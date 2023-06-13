@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {StyleSheet, Text, View, TouchableWithoutFeedback} from 'react-native';
+import {StyleSheet, Text, View, TouchableWithoutFeedback, StatusBar} from 'react-native';
 import { InferProps } from 'prop-types';
 import {VdoPlayerView} from 'vdocipher-rn-bridge';
 import MatIcon from 'react-native-vector-icons/MaterialIcons';
@@ -8,6 +8,8 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import DialogAndroid from 'react-native-dialogs';
 import { ErrorDescription } from './type';
 import { Track, MediaInfo, CaptionLanguage, VideoQuality, VdoPropTypes, PlaybackProperty } from 'vdocipher-rn-bridge/type';
+// @ts-ignore
+import  Orientation from 'react-native-orientation';
 
 function digitalTime(time: number) {
   return ~~(time / 60) + ':' + (time % 60 < 10 ? '0' : '') + (time % 60);
@@ -132,16 +134,6 @@ export default class VdoPlayerControls extends Component<Props, State> {
     }
   };
 
-  _onEnterFullscreen = () => {
-    this.setState({isFullscreen: true});
-      this.props.onEnterFullscreen?.();
-  };
-
-  _onExitFullscreen = () => {
-    this.setState({isFullscreen: false});
-      this.props.onExitFullscreen?.();
-  };
-
   _onPictureInPictureModeChanged = (pictureInPictureModeInfo: {isInPictureInPictureMode: boolean}) => {
     this.setState({
       isInPictureInPictureMode:
@@ -166,10 +158,18 @@ export default class VdoPlayerControls extends Component<Props, State> {
 
   _toggleFullscreen = () => {
     if (this.state.isFullscreen) {
-      this._player.exitFullscreen();
+      Orientation.lockToPortrait();
+      StatusBar.setHidden(false);
+      this.props.onExitFullscreen?.();
     } else {
-      this._player.enterFullscreen();
+      Orientation.lockToLandscape();
+      StatusBar.setHidden(true);
+      this.props.onEnterFullscreen?.();
     }
+
+    this.setState({
+      isFullscreen: !this.state.isFullscreen,
+    });
   };
 
   _isCaptionLanguageAvailable = () => {
@@ -331,8 +331,6 @@ export default class VdoPlayerControls extends Component<Props, State> {
           onTracksChanged={this._onTracksChanged}
           onPlayerStateChanged={this._onPlayerStateChanged}
           onProgress={this._onProgress}
-          onEnterFullscreen={this._onEnterFullscreen}
-          onExitFullscreen={this._onExitFullscreen}
           onPictureInPictureModeChanged={this._onPictureInPictureModeChanged}
         />
         {!isInPictureInPictureMode && (
