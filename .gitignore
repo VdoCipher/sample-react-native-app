@@ -65,3 +65,6 @@ buck-out/
 **/assets/index.android.bundle.meta
 
 .vscode/
+
+ios/Podfile.lock
+ios/.xcode.env
