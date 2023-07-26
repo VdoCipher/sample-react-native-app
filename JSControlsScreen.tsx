@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import {StyleSheet, Text, SafeAreaView} from 'react-native';
 import VdoPlayerControls from './VdoPlayerControls';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import { RootStackParamList } from './type';
@@ -49,7 +49,7 @@ export default class JSControlsScreen extends Component<Props, State> {
     var isInPictureInPictureMode = this.state.isInPictureInPictureMode;
 
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <VdoPlayerControls
           style={
             isFullscreen || isInPictureInPictureMode
@@ -79,7 +79,7 @@ export default class JSControlsScreen extends Component<Props, State> {
             The ui controls for the player are react-native components
           </Text>
         )}
-      </View>
+      </SafeAreaView>
     );
   }
 }

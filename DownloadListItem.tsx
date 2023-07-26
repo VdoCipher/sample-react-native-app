@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {StyleSheet, Text, View, TouchableOpacity, Image} from 'react-native';
+import {StyleSheet, Text, View, TouchableOpacity, Image, Button} from 'react-native';
 import { DownloadStatus } from 'vdocipher-rn-bridge/type';
 
 const statusDescription = (downloadStatus: DownloadStatus) => {
@@ -23,6 +23,8 @@ type Props = {
   downloadStatus?: DownloadStatus;
   onDownload: () => void;
   onPlay: () => void;
+  onStop: () => void;
+  onResume: () => void;
   onInfo: () => void;
   onDelete: () => void;
 };
@@ -31,7 +33,7 @@ type State = {};
 
 export default class DownloadListItem extends Component<Props, State> {
   render() {
-    const {title, downloadStatus, onDownload, onPlay, onInfo, onDelete} =
+    const {title, downloadStatus, onDownload, onPlay, onStop, onResume, onInfo, onDelete} =
       this.props;
     const {mediaInfo, status, downloadPercent, reason, reasonDescription} =
       downloadStatus || {};
@@ -92,7 +94,31 @@ export default class DownloadListItem extends Component<Props, State> {
               source={require('./round_play_arrow_black_24.png')}
             />
           </TouchableOpacity>
-          <TouchableOpacity
+          <View style={{
+              width: 80,
+              height: 80,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}>
+            <Button
+              disabled={playEnabled}
+              title={"Stop"}
+              onPress={onStop}
+            />
+          </View>
+          <View style={{
+              width: 80,
+              height: 80,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}>
+            <Button
+              disabled={playEnabled}
+              title={"Resume"}
+              onPress={onResume}
+            />
+          </View>
+          {/* <TouchableOpacity
             onPress={onInfo}
             activeOpacity={0.8}
             disabled={true}
@@ -106,7 +132,7 @@ export default class DownloadListItem extends Component<Props, State> {
               style={{opacity: 0.4}}
               source={require('./baseline_info_black_18.png')}
             />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
           <TouchableOpacity
             onPress={onDelete}
             activeOpacity={0.8}

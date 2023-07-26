@@ -7,7 +7,7 @@
  */
 
 import React, {Component} from 'react';
-import {StyleSheet, Text, Button, View, NativeModules} from 'react-native';
+import {StyleSheet, Text, Button, View, NativeModules, SafeAreaView, Platform} from 'react-native';
 import {startVideoScreen} from 'vdocipher-rn-bridge';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import { RootStackParamList } from './type';
@@ -47,8 +47,9 @@ export default class HomeScreen extends Component<Props, State> {
     var ready = this.state.otp != '';
     const {otp, playbackInfo} = this.state;
     const embedInfo: EmbedInfo = {otp, playbackInfo};
+    const isPlatformIOS = Platform.OS == "ios";
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <Text style={styles.welcome}>
           Welcome to VdoCipher react-native integration!
         </Text>
@@ -87,13 +88,15 @@ export default class HomeScreen extends Component<Props, State> {
         </View>
         {/* This button is used to show how to open player in new activity so that when player 
         goes in pip mode, the previous activity(screen) is still visible/browsable */}
-        <View style={styles.buttonContainer}>
-          <Button
-            title="Open Player in new Activity"
-            onPress={() => NativeModules.PlayerActivityM.openPlayerActivity()}
-          />
-        </View>
-      </View>
+        { !isPlatformIOS &&
+          <View style={styles.buttonContainer}>
+            <Button
+              title="Open Player in new Activity"
+              onPress={() => NativeModules.PlayerActivityM.openPlayerActivity()}
+            />
+          </View>
+        }
+      </SafeAreaView>
     );
   }
 }

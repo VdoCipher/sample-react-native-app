@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {StyleSheet, Text, View, Button} from 'react-native';
+import {StyleSheet, Text, SafeAreaView} from 'react-native';
 import {VdoPlayerView} from 'vdocipher-rn-bridge';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import { RootStackParamList } from './type';
@@ -27,7 +27,7 @@ export default class NativeControlsScreen extends Component<Props, State> {
     const embedInfo = this.props.route.params.embedInfo;
     
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <VdoPlayerView
           ref={(player: any) => (this._player = player)}
           style={styles.player}
@@ -55,7 +55,7 @@ export default class NativeControlsScreen extends Component<Props, State> {
         <Text style={styles.description}>
           The ui controls for the player are embedded inside the native view
         </Text>
-      </View>
+      </SafeAreaView>
     );
   }
 }

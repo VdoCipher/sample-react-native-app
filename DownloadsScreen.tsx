@@ -177,6 +177,18 @@ export default class DownloadsScreen extends Component<Props, State> {
       });
   }
 
+  _stopDownload(mediaId: string) {
+    VdoDownload.stop([mediaId]).then(() => console.log('stop success')).catch((error: {exception: string, msg: string}) =>
+      console.warn('Error stopping ' + mediaId),
+    );
+  }
+
+  _resumeDownload(mediaId: string) {
+    VdoDownload.resume([mediaId]).then(() => console.log('resume success')).catch((error: {exception: string, msg: string}) =>
+      console.warn('Error resuming ' + mediaId),
+    );
+  }
+
   _removeDownload(mediaId: string) {
     console.log('remove ' + mediaId);
     VdoDownload.remove([mediaId]).catch((error: {exception: string, msg: string}) =>
@@ -210,6 +222,8 @@ export default class DownloadsScreen extends Component<Props, State> {
                     ),
                   })
                 }
+                onStop={() => this._stopDownload(item.mediaId)}
+                onResume={() => this._resumeDownload(item.mediaId)}
                 onInfo={() => console.warn('show info: to be implemented')}
                 onDelete={() => this._removeDownload(item.mediaId)}
               />

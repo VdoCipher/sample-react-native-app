@@ -39,7 +39,7 @@ export default class PlayerActivity extends Component<Props, State> {
   };
 
   render() {
-    const embedInfo: EmbedInfo = {otp: "20160313versASE323WnGTFV06zFoQdBkWO59LyjjYBISl5p5w7LJaaDzQhe5Sos", playbackInfo: "eyJ2aWRlb0lkIjoiY2M2ZDhlMjc3NzE4NDI0NWE0M2E1NmM4ZDhlNGYwZjMifQ"};
+    const embedInfo: EmbedInfo = {otp: "20160313versASE323o9FvTrF17VOTTAQFP9OTAPHJY2Dxw0XH8l2EWr3p9lbSal", playbackInfo: "eyJ2aWRlb0lkIjoiMDE1ZGU3ZTk3ZjQzNDg2NWFhMTU1Y2E4M2I2OTBmNGIifQ"};
     var isFullscreen = this.state.isFullscreen;
 
     return (

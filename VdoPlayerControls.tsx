@@ -1,13 +1,13 @@
 import React, {Component} from 'react';
-import {StyleSheet, Text, View, TouchableWithoutFeedback, StatusBar} from 'react-native';
+import {StyleSheet, Text, View, TouchableWithoutFeedback, Modal, Platform, StatusBar, SafeAreaView } from 'react-native';
 import { InferProps } from 'prop-types';
 import {VdoPlayerView} from 'vdocipher-rn-bridge';
 import MatIcon from 'react-native-vector-icons/MaterialIcons';
 import Icon from 'react-native-vector-icons/FontAwesome';
-// @ts-ignore
-import DialogAndroid from 'react-native-dialogs';
 import { ErrorDescription } from './type';
 import { Track, MediaInfo, CaptionLanguage, VideoQuality, VdoPropTypes, PlaybackProperty } from 'vdocipher-rn-bridge/type';
+// @ts-ignore
+import RadioButtonRN from 'radio-buttons-react-native';
 // @ts-ignore
 import  Orientation from 'react-native-orientation';
 
@@ -33,6 +33,11 @@ type State = {
   isFullscreen: boolean,
   isInPictureInPictureMode: boolean,
   isCaptionLanguageAvailable: boolean,
+  modalVisible: boolean,
+  items: any,
+  selectedTrack: any,
+  type: string,
+  initial: number
 };
 
 export default class VdoPlayerControls extends Component<Props, State> {
@@ -55,7 +60,12 @@ export default class VdoPlayerControls extends Component<Props, State> {
       seekbarPosition: 0,
       isFullscreen: false,
       isInPictureInPictureMode: false,
-      isCaptionLanguageAvailable: false
+      isCaptionLanguageAvailable: false,
+      modalVisible: false,
+      items: [],
+      selectedTrack: {},
+      type: 'video',
+      initial: -1
     };
   }
 
@@ -89,10 +99,12 @@ export default class VdoPlayerControls extends Component<Props, State> {
       duration: metaData.mediaInfo.duration / 1000,
     });
     this.propInterval = setInterval(
-      () => this._player.getPlaybackPropertiesV2().then((playbackProperties: PlaybackProperty) => {
-        console.log("tp:", playbackProperties.totalPlayed);
-        console.log("tc: ",playbackProperties.totalCovered);
-      }),
+      () => {
+        this._player.getPlaybackPropertiesV2().then((playbackProperties: PlaybackProperty) => {
+          console.log("tp:", playbackProperties.totalPlayed);
+          console.log("tc: ",playbackProperties.totalCovered);
+        }    
+      )},
       10000,
     );
 
@@ -158,12 +170,16 @@ export default class VdoPlayerControls extends Component<Props, State> {
 
   _toggleFullscreen = () => {
     if (this.state.isFullscreen) {
-      Orientation.lockToPortrait();
-      StatusBar.setHidden(false);
+      if (Platform.OS == 'android'){
+        Orientation.lockToPortrait();
+        StatusBar.setHidden(false);
+      }
       this.props.onExitFullscreen?.();
     } else {
-      Orientation.lockToLandscape();
-      StatusBar.setHidden(true);
+      if (Platform.OS == 'android'){
+        Orientation.lockToLandscape();
+        StatusBar.setHidden(true);
+      }
       this.props.onEnterFullscreen?.();
     }
 
@@ -184,38 +200,17 @@ export default class VdoPlayerControls extends Component<Props, State> {
       });
   }
 
-  _loadDialog = async (items: any, type: any, selectedTrack: any) => {
-    const {selectedItem} = await DialogAndroid.showPicker(type, null, {
-      // positiveText: null, // if positiveText is null, then on select of item, it dismisses dialog
-      negativeText: 'Cancel',
-      type: DialogAndroid.listRadio,
-      selectedId: selectedTrack.id,
-      labelKey: 'dialogLabel',
-      items: items,
-    });
-    if (selectedItem) {
-      // when negative button is clicked, selectedItem is not present, so it doesn't get here
-      if (selectedItem.id == -2) {
-        this._player.enableAdaptiveVideo();
-      } else if (selectedItem.id == -1) {
-        this._player.disableCaptions();
-      } else if (type === 'video') {
-        this._player.setVideoQuality(selectedItem);
-      } else {
-        this._player.setCaptionLanguage(selectedItem);
-      }
-    }
-  };
-
   _showCaptionTrackSelectionDialog = () => {
     this._player
       .getCaptionLanguages()
       .then(async (captionLanguages: Array<CaptionLanguage>) => {
         var selectedTrack = await this._player.getSelectedCaptionLanguage();
-        captionLanguages.forEach((captionLanguage: CaptionLanguage & {dialogLabel?: string}) => {
-          captionLanguage.dialogLabel = captionLanguage.language;
+
+        captionLanguages.forEach((captionLanguage: CaptionLanguage) => {
+          captionLanguage.label = captionLanguage.language;
         });
-        var disable = {id: -1, language: "", label: "", dialogLabel: 'Turn off Captions'};
+
+        var disable = {id: -1, language: "", label: "Turn off Captions"};
         captionLanguages.push(disable);
 
         if (selectedTrack == null) {
@@ -234,12 +229,13 @@ export default class VdoPlayerControls extends Component<Props, State> {
     this._player
       .getVideoQualities()
       .then(async (videoQualities: Array<VideoQuality>) => {
-        var [audioQuality, videoDuration, selectedTrack] = await Promise.all([
+        var [audioQuality, videoDuration, selectedTrack, isAdaptive] = await Promise.all([
           this._player.getSelectedAudioQuality(),
           this._player.getDuration(),
           this._player.getSelectedVideoQuality(),
+          this._player.isAdaptive(),
         ]);
-        videoQualities.forEach(async (videoQuality: VideoQuality & {dialogLabel?: string}) => {
+        videoQualities.forEach(async (videoQuality: VideoQuality & {label?: string}) => {
           var bitrateInKbps =
             (videoQuality.bitrate + audioQuality.bitrate) / 1024;
           var roundedOffBitrateInKbps = Math.round(bitrateInKbps / 10.0) * 10;
@@ -247,17 +243,17 @@ export default class VdoPlayerControls extends Component<Props, State> {
             videoQuality.bitrate + audioQuality.bitrate,
             videoDuration.duration,
           );
-          videoQuality.dialogLabel =
+          videoQuality.label =
             '(' +
             dataExpenditureInMB +
             ', ' +
             roundedOffBitrateInKbps +
             'kbps)';
         });
-        var auto = {id: -2, bitrate: 0, width: 0, height: 0, dialogLabel: 'Auto'};
+        var auto = {id: -2, bitrate: 0, width: 0, height: 0, label: 'Auto'};
         videoQualities.push(auto);
 
-        if (selectedTrack == null) {
+        if (selectedTrack == null || isAdaptive) {
           selectedTrack = videoQualities[videoQualities.length - 1];
         }
 
@@ -288,6 +284,86 @@ export default class VdoPlayerControls extends Component<Props, State> {
     }
   };
 
+  _loadDialog = async (items: any, type: string, selectedTrack: any) => {
+    var initial = this.initialSelectedTrack(items, selectedTrack);
+
+    this.setState({
+      items: items,
+      selectedTrack: selectedTrack,
+      type: type,
+      initial: initial
+    })
+    this.changeModalVisibility();
+  };
+
+  initialSelectedTrack(items: any, selectedTrack: any) {
+    var initial = this.state.items.length
+    for (var index = 0; index < items.length; index ++) {
+      if (items[index].id == selectedTrack.id) {
+        initial = index + 1;
+        return initial;
+      }
+    }
+  }
+
+  changeModalVisibility() {
+    this.setState({
+      modalVisible: !this.state.modalVisible,
+    })
+  }
+
+  handleRadioChange(e: any) {
+    if (this.state.selectedTrack.id == e.id) {
+      return;
+    }
+    this.changeModalVisibility();
+    var items = this.state.items;
+    for (var index = 0; index < items.length; index ++) {
+      if (items[index].id === e.id) {
+        Promise.resolve(this.setState({
+          selectedTrack: items[index],
+        })).then(()=>{
+          if (this.state.selectedTrack.id == -2) {
+            this._player.enableAdaptiveVideo();
+          } else if (this.state.selectedTrack.id == -1) {
+            this._player.disableCaptions();
+          } else if (this.state.type === 'video') {
+            this._player.setVideoQuality(this.state.selectedTrack);
+          } else {
+            this._player.setCaptionLanguage(this.state.selectedTrack);
+          }
+        })
+       break;
+      }
+    }
+  }
+
+  _renderModal() {
+    return (
+      <View style={styles.player.centeredView}>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={this.state.modalVisible}
+        onRequestClose={() => {
+          this.changeModalVisibility();
+        }}>
+        <View style={styles.player.centeredView}>
+          <View style={styles.player.modalView}>
+            <RadioButtonRN
+              style={{width: 200}}
+              data={this.state.items}
+              selectedBtn={(e: any) =>this.handleRadioChange(e)}
+              box={false}
+              initial={this.state.initial}
+              />
+          </View>
+        </View>
+      </Modal>
+      </View>
+    )
+  }
+
   _renderSeekbar() {
     return (
       <TouchableWithoutFeedback onPress={this._onProgressTouch}>
@@ -315,11 +391,12 @@ export default class VdoPlayerControls extends Component<Props, State> {
     var isFullscreen = this.state.isFullscreen;
     var isInPictureInPictureMode = this.state.isInPictureInPictureMode;
     var isCaptionLanguageAvailable = this.state.isCaptionLanguageAvailable;
+    var isVideoTrackSelectionAvailable = Platform.OS != "ios"
 
     return (
-      <View style={styles.player.container}>
+      <SafeAreaView style={styles.player.container}>
         <VdoPlayerView
-          ref={(player: any) => (this._player = player)}
+          ref={player => this._player = player}
           style={styles.player.video}
           {...this.props}
           playWhenReady={this.state.playWhenReady}
@@ -346,6 +423,7 @@ export default class VdoPlayerControls extends Component<Props, State> {
               {digitalTime(Math.floor(this.state.position))}
             </Text>
             {this._renderSeekbar()}
+            {this._renderModal()}
             <Text style={styles.controls.duration}>
               {digitalTime(Math.floor(this.state.duration))}
             </Text>
@@ -360,15 +438,17 @@ export default class VdoPlayerControls extends Component<Props, State> {
                 />
               </TouchableWithoutFeedback>
             }
-            <TouchableWithoutFeedback
-              onPress={() => this._showVideoTrackSelectionDialog()}>
-              <MatIcon
-                name="high-quality"
-                style={styles.controls.quality}
-                size={30}
-                color="#FFF"
-              />
-            </TouchableWithoutFeedback>
+            { isVideoTrackSelectionAvailable &&
+              <TouchableWithoutFeedback
+                onPress={() => this._showVideoTrackSelectionDialog()}>
+                <MatIcon
+                  name="high-quality"
+                  style={styles.controls.quality}
+                  size={30}
+                  color="#FFF"
+                />
+              </TouchableWithoutFeedback>
+            }
             <TouchableWithoutFeedback onPress={this._toggleFullscreen}>
               <MatIcon
                 name={isFullscreen ? 'fullscreen-exit' : 'fullscreen'}
@@ -379,7 +459,7 @@ export default class VdoPlayerControls extends Component<Props, State> {
             </TouchableWithoutFeedback>
           </View>
         )}
-      </View>
+      </SafeAreaView>
     );
   }
 }
@@ -399,6 +479,47 @@ const styles = {
       right: 0,
       bottom: 0,
       left: 0,
+    },
+    centeredView: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginTop: 22,
+    },
+    modalView: {
+      margin: 20,
+      backgroundColor: 'white',
+      borderRadius: 20,
+      padding: 35,
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 4,
+      elevation: 5,
+    },
+    button: {
+      borderRadius: 20,
+      padding: 10,
+      elevation: 2,
+    },
+    buttonOpen: {
+      backgroundColor: '#F194FF',
+    },
+    buttonClose: {
+      backgroundColor: '#2196F3',
+    },
+    textStyle: {
+      color: 'white',
+      fontWeight: 'bold',
+      textAlign: 'center',
+    },
+    modalText: {
+      marginBottom: 15,
+      textAlign: 'center',
     },
   }),
   controls: StyleSheet.create({
