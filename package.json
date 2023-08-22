@@ -7,6 +7,7 @@
     "test": "jest",
     "lint": "eslint .",
     "android": "react-native bundle --platform android --dev false --entry-file index.ts --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res && react-native run-android",
+    "ios": "react-native bundle --entry-file='index.ts' --bundle-output='./ios/example/main.jsbundle' --dev=false --platform='ios' --assets-dest='./ios'",
     "postinstall": "patch-package"
   },
   "dependencies": {
@@ -24,7 +25,7 @@
     "react-native-screens": "^3.21.1",
     "react-native-vector-icons": "^6.6.0",
     "react-navigation": "^4.0.10",
-    "vdocipher-rn-bridge": "1.17.0"
+    "vdocipher-rn-bridge": "1.17.1"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

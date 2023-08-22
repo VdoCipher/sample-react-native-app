@@ -119,6 +119,9 @@ export default class DownloadsScreen extends Component<Props, State> {
   }
 
   _updateItem(mediaId: string, downloadStatus: DownloadStatus) {
+    if (this.state.downloadStatusArray.length <= 0) {
+      this._refreshDownloadList();
+    }
     const updateIndex = this.state.downloadStatusArray.findIndex(
       (s: DownloadStatus) => s.mediaInfo.mediaId === mediaId,
     );
