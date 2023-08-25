@@ -1,7 +1,18 @@
 diff --git a/node_modules/react-native-orientation/android/build.gradle b/node_modules/react-native-orientation/android/build.gradle
-index e09fb27..f5b1e04 100644
+index e09fb27..c2da0db 100644
 --- a/node_modules/react-native-orientation/android/build.gradle
 +++ b/node_modules/react-native-orientation/android/build.gradle
+@@ -1,8 +1,8 @@
+ apply plugin: 'com.android.library'
+ 
+ android {
+-    compileSdkVersion 23
+-    buildToolsVersion "23.0.1"
++    compileSdkVersion 30
++    buildToolsVersion "33.0.0"
+ 
+     defaultConfig {
+         minSdkVersion 16
 @@ -16,5 +16,5 @@ android {
  }
  
@@ -18,8 +29,7 @@ index 0000000..0d259dd
 +o/classes
 diff --git a/node_modules/react-native-orientation/android/build/.transforms/e278c405bf3bb76599e4649c16c4d100/transformed/classes/classes.dex b/node_modules/react-native-orientation/android/build/.transforms/e278c405bf3bb76599e4649c16c4d100/transformed/classes/classes.dex
 new file mode 100644
-index 0000000..3770032
-Binary files /dev/null and b/node_modules/react-native-orientation/android/build/.transforms/e278c405bf3bb76599e4649c16c4d100/transformed/classes/classes.dex differ
+index 0000000..e69de29
 diff --git a/node_modules/react-native-orientation/android/build/generated/source/buildConfig/debug/com/github/yamill/orientation/BuildConfig.java b/node_modules/react-native-orientation/android/build/generated/source/buildConfig/debug/com/github/yamill/orientation/BuildConfig.java
 new file mode 100644
 index 0000000..2b7ab85
@@ -38,17 +48,15 @@ index 0000000..2b7ab85
 +}
 diff --git a/node_modules/react-native-orientation/android/build/intermediates/aapt_friendly_merged_manifests/debug/aapt/AndroidManifest.xml b/node_modules/react-native-orientation/android/build/intermediates/aapt_friendly_merged_manifests/debug/aapt/AndroidManifest.xml
 new file mode 100644
-index 0000000..158bf85
+index 0000000..f9b0c10
 --- /dev/null
 +++ b/node_modules/react-native-orientation/android/build/intermediates/aapt_friendly_merged_manifests/debug/aapt/AndroidManifest.xml
-@@ -0,0 +1,9 @@
+@@ -0,0 +1,7 @@
 +<?xml version="1.0" encoding="utf-8"?>
 +<manifest xmlns:android="http://schemas.android.com/apk/res/android"
 +    package="com.github.yamill.orientation" >
 +
-+    <uses-sdk
-+        android:minSdkVersion="16"
-+        android:targetSdkVersion="22" />
++    <uses-sdk android:minSdkVersion="16" />
 +
 +</manifest>
 \ No newline at end of file
@@ -79,13 +87,14 @@ index 0000000..cdc0bb6
 \ No newline at end of file
 diff --git a/node_modules/react-native-orientation/android/build/intermediates/aar_metadata/debug/aar-metadata.properties b/node_modules/react-native-orientation/android/build/intermediates/aar_metadata/debug/aar-metadata.properties
 new file mode 100644
-index 0000000..8c9c699
+index 0000000..776557e
 --- /dev/null
 +++ b/node_modules/react-native-orientation/android/build/intermediates/aar_metadata/debug/aar-metadata.properties
-@@ -0,0 +1,4 @@
+@@ -0,0 +1,5 @@
 +aarFormatVersion=1.0
 +aarMetadataVersion=1.0
 +minCompileSdk=1
++minCompileSdkExtension=0
 +minAndroidGradlePluginVersion=1.0.0
 diff --git a/node_modules/react-native-orientation/android/build/intermediates/annotation_processor_list/debug/annotationProcessors.json b/node_modules/react-native-orientation/android/build/intermediates/annotation_processor_list/debug/annotationProcessors.json
 new file mode 100644
@@ -97,12 +106,10 @@ index 0000000..9e26dfe
 \ No newline at end of file
 diff --git a/node_modules/react-native-orientation/android/build/intermediates/compile_library_classes_jar/debug/classes.jar b/node_modules/react-native-orientation/android/build/intermediates/compile_library_classes_jar/debug/classes.jar
 new file mode 100644
-index 0000000..e2746bf
-Binary files /dev/null and b/node_modules/react-native-orientation/android/build/intermediates/compile_library_classes_jar/debug/classes.jar differ
+index 0000000..e69de29
 diff --git a/node_modules/react-native-orientation/android/build/intermediates/compile_r_class_jar/debug/R.jar b/node_modules/react-native-orientation/android/build/intermediates/compile_r_class_jar/debug/R.jar
 new file mode 100644
-index 0000000..d7ff191
-Binary files /dev/null and b/node_modules/react-native-orientation/android/build/intermediates/compile_r_class_jar/debug/R.jar differ
+index 0000000..e69de29
 diff --git a/node_modules/react-native-orientation/android/build/intermediates/compile_symbol_list/debug/R.txt b/node_modules/react-native-orientation/android/build/intermediates/compile_symbol_list/debug/R.txt
 new file mode 100644
 index 0000000..17866a4
@@ -2064,11 +2071,11 @@ index 0000000..17866a4
 +int xml rn_dev_preferences 0x0
 diff --git a/node_modules/react-native-orientation/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties b/node_modules/react-native-orientation/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties
 new file mode 100644
-index 0000000..94769f4
+index 0000000..336c57d
 --- /dev/null
 +++ b/node_modules/react-native-orientation/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties
 @@ -0,0 +1 @@
-+#Thu Jun 15 13:25:29 IST 2023
++#Thu Aug 24 11:34:06 IST 2023
 diff --git a/node_modules/react-native-orientation/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml b/node_modules/react-native-orientation/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml
 new file mode 100644
 index 0000000..671fc5a
@@ -2107,20 +2114,16 @@ index 0000000..7c89cdb
 \ No newline at end of file
 diff --git a/node_modules/react-native-orientation/android/build/intermediates/javac/debug/classes/com/github/yamill/orientation/BuildConfig.class b/node_modules/react-native-orientation/android/build/intermediates/javac/debug/classes/com/github/yamill/orientation/BuildConfig.class
 new file mode 100644
-index 0000000..4320b1e
-Binary files /dev/null and b/node_modules/react-native-orientation/android/build/intermediates/javac/debug/classes/com/github/yamill/orientation/BuildConfig.class differ
+index 0000000..e69de29
 diff --git a/node_modules/react-native-orientation/android/build/intermediates/javac/debug/classes/com/github/yamill/orientation/OrientationModule$1.class b/node_modules/react-native-orientation/android/build/intermediates/javac/debug/classes/com/github/yamill/orientation/OrientationModule$1.class
 new file mode 100644
-index 0000000..aae7058
-Binary files /dev/null and b/node_modules/react-native-orientation/android/build/intermediates/javac/debug/classes/com/github/yamill/orientation/OrientationModule$1.class differ
+index 0000000..e69de29
 diff --git a/node_modules/react-native-orientation/android/build/intermediates/javac/debug/classes/com/github/yamill/orientation/OrientationModule.class b/node_modules/react-native-orientation/android/build/intermediates/javac/debug/classes/com/github/yamill/orientation/OrientationModule.class
 new file mode 100644
-index 0000000..98e4293
-Binary files /dev/null and b/node_modules/react-native-orientation/android/build/intermediates/javac/debug/classes/com/github/yamill/orientation/OrientationModule.class differ
+index 0000000..e69de29
 diff --git a/node_modules/react-native-orientation/android/build/intermediates/javac/debug/classes/com/github/yamill/orientation/OrientationPackage.class b/node_modules/react-native-orientation/android/build/intermediates/javac/debug/classes/com/github/yamill/orientation/OrientationPackage.class
 new file mode 100644
-index 0000000..de5ae87
-Binary files /dev/null and b/node_modules/react-native-orientation/android/build/intermediates/javac/debug/classes/com/github/yamill/orientation/OrientationPackage.class differ
+index 0000000..e69de29
 diff --git a/node_modules/react-native-orientation/android/build/intermediates/local_only_symbol_list/debug/R-def.txt b/node_modules/react-native-orientation/android/build/intermediates/local_only_symbol_list/debug/R-def.txt
 new file mode 100644
 index 0000000..78ac5b8
@@ -2131,34 +2134,29 @@ index 0000000..78ac5b8
 +local
 diff --git a/node_modules/react-native-orientation/android/build/intermediates/manifest_merge_blame_file/debug/manifest-merger-blame-debug-report.txt b/node_modules/react-native-orientation/android/build/intermediates/manifest_merge_blame_file/debug/manifest-merger-blame-debug-report.txt
 new file mode 100644
-index 0000000..1d7b02a
+index 0000000..f3dd199
 --- /dev/null
 +++ b/node_modules/react-native-orientation/android/build/intermediates/manifest_merge_blame_file/debug/manifest-merger-blame-debug-report.txt
-@@ -0,0 +1,11 @@
+@@ -0,0 +1,8 @@
 +1<?xml version="1.0" encoding="utf-8"?>
 +2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
 +3    package="com.github.yamill.orientation" >
 +4
-+5    <uses-sdk
-+6        android:minSdkVersion="16"
-+6-->/Users/mansisharma/Documents/GitHub/sample-react-native-app/node_modules/react-native-orientation/android/src/main/AndroidManifest.xml
-+7        android:targetSdkVersion="22" />
-+7-->/Users/mansisharma/Documents/GitHub/sample-react-native-app/node_modules/react-native-orientation/android/src/main/AndroidManifest.xml
-+8
-+9</manifest>
++5    <uses-sdk android:minSdkVersion="16" />
++5-->/Users/mansisharma/Documents/GitHub/sample-react-native-app/node_modules/react-native-orientation/android/src/main/AndroidManifest.xml
++6
++7</manifest>
 diff --git a/node_modules/react-native-orientation/android/build/intermediates/merged_manifest/debug/AndroidManifest.xml b/node_modules/react-native-orientation/android/build/intermediates/merged_manifest/debug/AndroidManifest.xml
 new file mode 100644
-index 0000000..158bf85
+index 0000000..f9b0c10
 --- /dev/null
 +++ b/node_modules/react-native-orientation/android/build/intermediates/merged_manifest/debug/AndroidManifest.xml
-@@ -0,0 +1,9 @@
+@@ -0,0 +1,7 @@
 +<?xml version="1.0" encoding="utf-8"?>
 +<manifest xmlns:android="http://schemas.android.com/apk/res/android"
 +    package="com.github.yamill.orientation" >
 +
-+    <uses-sdk
-+        android:minSdkVersion="16"
-+        android:targetSdkVersion="22" />
++    <uses-sdk android:minSdkVersion="16" />
 +
 +</manifest>
 \ No newline at end of file
@@ -2197,8 +2195,7 @@ index 0000000..8b90e88
 \ No newline at end of file
 diff --git a/node_modules/react-native-orientation/android/build/intermediates/runtime_library_classes_jar/debug/classes.jar b/node_modules/react-native-orientation/android/build/intermediates/runtime_library_classes_jar/debug/classes.jar
 new file mode 100644
-index 0000000..5f78e3e
-Binary files /dev/null and b/node_modules/react-native-orientation/android/build/intermediates/runtime_library_classes_jar/debug/classes.jar differ
+index 0000000..e69de29
 diff --git a/node_modules/react-native-orientation/android/build/intermediates/symbol_list_with_package_name/debug/package-aware-r.txt b/node_modules/react-native-orientation/android/build/intermediates/symbol_list_with_package_name/debug/package-aware-r.txt
 new file mode 100644
 index 0000000..a115502
@@ -3684,5 +3681,4 @@ index 0000000..5c4ca11
 +		INJECTED from /Users/mansisharma/Documents/GitHub/sample-react-native-app/node_modules/react-native-orientation/android/src/main/AndroidManifest.xml
 diff --git a/node_modules/react-native-orientation/android/build/tmp/compileDebugJavaWithJavac/previous-compilation-data.bin b/node_modules/react-native-orientation/android/build/tmp/compileDebugJavaWithJavac/previous-compilation-data.bin
 new file mode 100644
-index 0000000..9597161
-Binary files /dev/null and b/node_modules/react-native-orientation/android/build/tmp/compileDebugJavaWithJavac/previous-compilation-data.bin differ
+index 0000000..e69de29
