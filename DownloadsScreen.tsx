@@ -119,13 +119,17 @@ export default class DownloadsScreen extends Component<Props, State> {
   }
 
   _updateItem(mediaId: string, downloadStatus: DownloadStatus) {
-    if (this.state.downloadStatusArray.length <= 0) {
-      this._refreshDownloadList();
-    }
+
     const updateIndex = this.state.downloadStatusArray.findIndex(
       (s: DownloadStatus) => s.mediaInfo.mediaId === mediaId,
     );
+
+    if (updateIndex == -1) {
+      this._refreshDownloadList();
+    }
+
     console.log('updateIndex', updateIndex);
+    
     if (updateIndex > -1) {
       let newState = Object.assign({}, this.state);
       newState.downloadStatusArray[updateIndex] = downloadStatus;

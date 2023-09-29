@@ -33,6 +33,7 @@ type State = {
   isFullscreen: boolean,
   isInPictureInPictureMode: boolean,
   isCaptionLanguageAvailable: boolean,
+  isVideoTrackSelectionAvailable: boolean,
   modalVisible: boolean,
   items: any,
   selectedTrack: any,
@@ -61,6 +62,7 @@ export default class VdoPlayerControls extends Component<Props, State> {
       isFullscreen: false,
       isInPictureInPictureMode: false,
       isCaptionLanguageAvailable: false,
+      isVideoTrackSelectionAvailable: false,
       modalVisible: false,
       items: [],
       selectedTrack: {},
@@ -109,6 +111,7 @@ export default class VdoPlayerControls extends Component<Props, State> {
     );
 
     this._isCaptionLanguageAvailable();
+    this._isVideoTrackSelectionAvailable();
   };
 
   _onTracksChanged = (tracks: {availableTracks: Array<Track>, selectedTracks: Array<Track>}) => {
@@ -121,6 +124,11 @@ export default class VdoPlayerControls extends Component<Props, State> {
       buffering: playerState === 'buffering',
       ended: playerState === 'ended',
     });
+    if (playerState === 'ended') {
+      this.setState({
+        playWhenReady: false
+      });
+    }
   };
 
   _onProgress = (progress: {currentTime: number}) => {
@@ -137,6 +145,13 @@ export default class VdoPlayerControls extends Component<Props, State> {
   _onPlayButtonTouch = () => {
     if (this.state.ended) {
       this._player.seek(0);
+      this.setState(state => {
+        return {
+          playWhenReady: true,
+          position: 0,
+          seekbarPosition: 0
+        };
+      });
     } else {
       this.setState(state => {
         return {
@@ -200,6 +215,17 @@ export default class VdoPlayerControls extends Component<Props, State> {
       });
   }
 
+  _isVideoTrackSelectionAvailable = () => {
+    this._player.getVideoQualities()
+    .then(async (videoQualities: Array<VideoQuality>) => {
+      if (videoQualities.length > 1) {
+        this.setState({
+          isVideoTrackSelectionAvailable: true
+        })
+      }
+    });
+  }
+
   _showCaptionTrackSelectionDialog = () => {
     this._player
       .getCaptionLanguages()
@@ -229,20 +255,34 @@ export default class VdoPlayerControls extends Component<Props, State> {
     this._player
       .getVideoQualities()
       .then(async (videoQualities: Array<VideoQuality>) => {
-        var [audioQuality, videoDuration, selectedTrack, isAdaptive] = await Promise.all([
-          this._player.getSelectedAudioQuality(),
+        var [videoDuration, selectedTrack, isAdaptive] = await Promise.all([
           this._player.getDuration(),
           this._player.getSelectedVideoQuality(),
           this._player.isAdaptive(),
         ]);
+        if (Platform.OS == "android") {
+          var audioQuality = await this._player.getSelectedAudioQuality();
+        }
         videoQualities.forEach(async (videoQuality: VideoQuality & {label?: string}) => {
-          var bitrateInKbps =
+          if (Platform.OS == "android") {
+            var bitrateInKbps =
             (videoQuality.bitrate + audioQuality.bitrate) / 1024;
+          } else {
+            var bitrateInKbps =
+              (videoQuality.bitrate) / 1024;
+          }
           var roundedOffBitrateInKbps = Math.round(bitrateInKbps / 10.0) * 10;
-          var dataExpenditureInMB = this._totalDataExpenditureInMb(
-            videoQuality.bitrate + audioQuality.bitrate,
-            videoDuration.duration,
-          );
+          if (Platform.OS == "android") {
+            var dataExpenditureInMB = this._totalDataExpenditureInMb(
+              videoQuality.bitrate + audioQuality.bitrate,
+              videoDuration.duration,
+            );
+          } else {
+            var dataExpenditureInMB = this._totalDataExpenditureInMb(
+              videoQuality.bitrate,
+              videoDuration.duration,
+            );
+          }
           videoQuality.label =
             '(' +
             dataExpenditureInMB +
@@ -387,11 +427,11 @@ export default class VdoPlayerControls extends Component<Props, State> {
   }
 
   render() {
-    var showPlayIcon = this.state.ended || !this.state.playWhenReady;
+    var showPlayIcon = !this.state.playWhenReady;
     var isFullscreen = this.state.isFullscreen;
     var isInPictureInPictureMode = this.state.isInPictureInPictureMode;
     var isCaptionLanguageAvailable = this.state.isCaptionLanguageAvailable;
-    var isVideoTrackSelectionAvailable = Platform.OS != "ios"
+    var isVideoTrackSelectionAvailable = this.state.isVideoTrackSelectionAvailable;
 
     return (
       <SafeAreaView style={styles.player.container}>
