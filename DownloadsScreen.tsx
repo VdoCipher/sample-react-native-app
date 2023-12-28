@@ -203,6 +203,12 @@ export default class DownloadsScreen extends Component<Props, State> {
     );
   }
 
+  _isExpired(mediaId: string) {
+    VdoDownload.isExpired(mediaId).then((isExpired: boolean) => console.log('expiry: ', isExpired)).catch((error: {exception: string, msg: string}) =>
+      console.warn('Error fetching expiry ' + mediaId),
+    );
+  }
+
   render() {
     return (
       <View style={styles.container}>
