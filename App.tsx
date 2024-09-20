@@ -16,6 +16,7 @@ import JSControlsScreen from './JSControlsScreen';
 import DownloadsScreen from './DownloadsScreen';
 import {enableScreens} from 'react-native-screens';
 import { RootStackParamList } from './type';
+import PlaylistScreen from './PlaylistScreen';
 enableScreens();
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -42,6 +43,11 @@ export default function App() {
         <Stack.Screen
           name="Downloads"
           component={DownloadsScreen}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="Playlist"
+          component={PlaylistScreen}
           options={{headerShown: false}}
         />
       </Stack.Navigator>

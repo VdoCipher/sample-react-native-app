@@ -86,6 +86,12 @@ export default class HomeScreen extends Component<Props, State> {
             onPress={() => this.props.navigation.navigate('Downloads')}
           />
         </View>
+        <View style={styles.buttonContainer}>
+          <Button
+            title="Open Playlist"
+            onPress={() => this.props.navigation.navigate('Playlist')}
+          />
+        </View>
         {/* This button is used to show how to open player in new activity so that when player 
         goes in pip mode, the previous activity(screen) is still visible/browsable */}
         { !isPlatformIOS &&

@@ -12,6 +12,7 @@ export type RootStackParamList = {
   NativeControls: {embedInfo: EmbedInfo | OfflineEmbedInfo};
   JSControls: {embedInfo: EmbedInfo | OfflineEmbedInfo};
   Downloads: undefined; 
+  Playlist: undefined;
 }
 
 export type ErrorDescription = {
