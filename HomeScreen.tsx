@@ -6,46 +6,29 @@
  * @flow
  */
 
-import React, {Component} from 'react';
+import React, {useState, useEffect} from 'react';
 import {StyleSheet, Text, Button, View, NativeModules, SafeAreaView, Platform} from 'react-native';
 import {startVideoScreen} from 'vdocipher-rn-bridge';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import { RootStackParamList } from './type';
 import { EmbedInfo } from 'vdocipher-rn-bridge/type';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
+export default function HomeScreen(props: NativeStackScreenProps<RootStackParamList, 'Home'>) {
 
-type State = {
-  otp: string;
-  playbackInfo: string;
-};
+  const [otp, setOtp] = useState('');
+  const [playbackInfo, setPlaybackInfo] = useState('');
 
-export default class HomeScreen extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = {
-      otp: '',
-      playbackInfo: ''
-    }
-    console.log('HomeScreen contructor');
-  }
-
-  componentDidMount() {
-    console.log('HomeScreen did mount');
+  useEffect(() => {
     fetch('https://dev.vdocipher.com/api/site/homepage_video')
-      .then(res => res.json())
-      .then(resp =>
-        this.setState({otp: resp.otp, playbackInfo: resp.playbackInfo}),
-      );
-  }
+    .then(res => res.json())
+    .then(resp => {
+        setOtp(resp.otp)
+        setPlaybackInfo(resp.playbackInfo)
+      }
+    );
+  }, []);
 
-  componentWillUnmount() {
-    console.log('HomeScreen will unmount');
-  }
-
-  render() {
-    var ready = this.state.otp != '';
-    const {otp, playbackInfo} = this.state;
+  var ready = otp != '';
     const embedInfo: EmbedInfo = {otp, playbackInfo};
     const isPlatformIOS = Platform.OS == "ios";
     return (
@@ -67,7 +50,7 @@ export default class HomeScreen extends Component<Props, State> {
               ready ? 'Start video with embedded native controls' : 'Loading...'
             }
             onPress={() =>
-              this.props.navigation.navigate('NativeControls', {embedInfo})
+              props.navigation.navigate('NativeControls', {embedInfo})
             }
           />
         </View>
@@ -76,20 +59,20 @@ export default class HomeScreen extends Component<Props, State> {
             disabled={!ready}
             title={ready ? 'Start video with JS controls' : 'Loading...'}
             onPress={() =>
-              this.props.navigation.navigate('JSControls', {embedInfo})
+              props.navigation.navigate('JSControls', {embedInfo})
             }
           />
         </View>
         <View style={styles.buttonContainer}>
           <Button
             title="Downloads"
-            onPress={() => this.props.navigation.navigate('Downloads')}
+            onPress={() => props.navigation.navigate('Downloads')}
           />
         </View>
         <View style={styles.buttonContainer}>
           <Button
             title="Open Playlist"
-            onPress={() => this.props.navigation.navigate('Playlist')}
+            onPress={() => props.navigation.navigate('Playlist')}
           />
         </View>
         {/* This button is used to show how to open player in new activity so that when player 
@@ -104,7 +87,6 @@ export default class HomeScreen extends Component<Props, State> {
         }
       </SafeAreaView>
     );
-  }
 }
 
 const styles = StyleSheet.create({

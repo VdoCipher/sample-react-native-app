@@ -18,27 +18,25 @@ const statusDescription = (downloadStatus: DownloadStatus) => {
   }
 };
 
-type Props = {
-  title: string;
-  downloadStatus?: DownloadStatus;
-  onDownload: () => void;
-  onPlay: () => void;
-  onStop: () => void;
-  onResume: () => void;
-  onInfo: () => void;
-  onDelete: () => void;
-};
+export default function DownloadListItem(props:{
+    title: string;
+    downloadStatus?: DownloadStatus;
+    onDownload: () => void;
+    onPlay: () => void;
+    onStop: () => void;
+    onResume: () => void;
+    onInfo: () => void;
+    onDelete: () => void;
+  } ) {
 
-type State = {};
-
-export default class DownloadListItem extends Component<Props, State> {
-  render() {
     const {title, downloadStatus, onDownload, onPlay, onStop, onResume, onInfo, onDelete} =
-      this.props;
+      props;
     const {mediaInfo, status, downloadPercent, reason, reasonDescription} =
       downloadStatus || {};
     const playEnabled =
       downloadStatus !== undefined && downloadStatus.status === 'completed';
+    const stopOrResumeEnabled =
+      downloadStatus !== undefined && downloadStatus.status !== 'completed' && downloadStatus.status !== 'removing';
     const playOpacity = playEnabled ? 1 : 0.4;
     const deleteEnabled = downloadStatus !== undefined;
     const deleteOpacity = deleteEnabled ? 1 : 0.4;
@@ -57,101 +55,100 @@ export default class DownloadListItem extends Component<Props, State> {
       </View>
     );
 
-    return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text
-            style={{flex: 1, paddingLeft: 8, fontSize: 22, fontWeight: 'bold'}}>
-            {title}
-          </Text>
-          <TouchableOpacity onPress={onDownload} activeOpacity={0.8}>
-            <Image source={require('./baseline_save_alt_black_18.png')} />
-          </TouchableOpacity>
-        </View>
-        <View
-          style={{
-            flexDirection: 'row',
-            flex: 1,
-            alignItems: 'center',
-            borderRadius: 2,
-            overflow: 'hidden',
-          }}>
-          {statusView}
-        </View>
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity
-            onPress={onPlay}
-            activeOpacity={0.8}
-            disabled={!playEnabled}
-            style={{
-              width: 80,
-              height: 80,
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}>
-            <Image
-              style={{opacity: playOpacity}}
-              source={require('./round_play_arrow_black_24.png')}
-            />
-          </TouchableOpacity>
-          <View style={{
-              width: 80,
-              height: 80,
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}>
-            <Button
-              disabled={playEnabled}
-              title={"Stop"}
-              onPress={onStop}
-            />
-          </View>
-          <View style={{
-              width: 80,
-              height: 80,
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}>
-            <Button
-              disabled={playEnabled}
-              title={"Resume"}
-              onPress={onResume}
-            />
-          </View>
-          {/* <TouchableOpacity
-            onPress={onInfo}
-            activeOpacity={0.8}
-            disabled={true}
-            style={{
-              width: 80,
-              height: 80,
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}>
-            <Image
-              style={{opacity: 0.4}}
-              source={require('./baseline_info_black_18.png')}
-            />
-          </TouchableOpacity> */}
-          <TouchableOpacity
-            onPress={onDelete}
-            activeOpacity={0.8}
-            disabled={!deleteEnabled}
-            style={{
-              width: 80,
-              height: 80,
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}>
-            <Image
-              style={{opacity: deleteOpacity}}
-              source={require('./baseline_delete_black_18.png')}
-            />
-          </TouchableOpacity>
-        </View>
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text
+          style={{flex: 1, paddingLeft: 8, fontSize: 22, fontWeight: 'bold'}}>
+          {title}
+        </Text>
+        <TouchableOpacity onPress={onDownload} activeOpacity={0.8}>
+          <Image source={require('./baseline_save_alt_black_18.png')} />
+        </TouchableOpacity>
       </View>
-    );
-  }
+      <View
+        style={{
+          flexDirection: 'row',
+          flex: 1,
+          alignItems: 'center',
+          borderRadius: 2,
+          overflow: 'hidden',
+        }}>
+        {statusView}
+      </View>
+      <View style={styles.actionsContainer}>
+        <TouchableOpacity
+          onPress={onPlay}
+          activeOpacity={0.8}
+          disabled={!playEnabled}
+          style={{
+            width: 80,
+            height: 80,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+          <Image
+            style={{opacity: playOpacity}}
+            source={require('./round_play_arrow_black_24.png')}
+          />
+        </TouchableOpacity>
+        <View style={{
+            width: 80,
+            height: 80,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+          <Button
+            disabled={!stopOrResumeEnabled}
+            title={"Stop"}
+            onPress={onStop}
+          />
+        </View>
+        <View style={{
+            width: 80,
+            height: 80,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+          <Button
+            disabled={!stopOrResumeEnabled}
+            title={"Resume"}
+            onPress={onResume}
+          />
+        </View>
+        {/* <TouchableOpacity
+          onPress={onInfo}
+          activeOpacity={0.8}
+          disabled={true}
+          style={{
+            width: 80,
+            height: 80,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+          <Image
+            style={{opacity: 0.4}}
+            source={require('./baseline_info_black_18.png')}
+          />
+        </TouchableOpacity> */}
+        <TouchableOpacity
+          onPress={onDelete}
+          activeOpacity={0.8}
+          disabled={!deleteEnabled}
+          style={{
+            width: 80,
+            height: 80,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+          <Image
+            style={{opacity: deleteOpacity}}
+            source={require('./baseline_delete_black_18.png')}
+          />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({

@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React, {useState, useEffect} from 'react';
 import {StyleSheet, Text, View, FlatList} from 'react-native';
 import {VdoDownload} from 'vdocipher-rn-bridge';
 import { Track, DownloadOptions, DownloadStatus, OfflineEmbedInfo } from 'vdocipher-rn-bridge/type';
@@ -32,112 +32,102 @@ const makeOfflineEmbedInfo = (mediaId: string, enableAutoResume?: boolean) : Off
   };
 };
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Downloads'>;
+export default function DownloadsScreen(props: NativeStackScreenProps<RootStackParamList, 'Downloads'>) {
 
-type State = { 
-  unregister: Array<() => void>;
-  downloadStatusArray: Array<DownloadStatus>;
-};
+  const [unregister, setUnregister] = useState<Array<() => void>>([]);
+  const [downloadStatusArray, setDownloadStatusArray] = useState<Array<DownloadStatus>>([]);
 
-export default class DownloadsScreen extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = {
-      downloadStatusArray: [],
-      unregister: [],
-    };
-  }
+  useEffect(() => {
+    console.log('DownloadsScreen did mount')
+    _refreshDownloadList();
 
-  componentDidMount() {
-    console.log('DownloadsScreen did mount');
-    this._refreshDownloadList();
-    this.state.unregister.push(
+    unregister.push(
       VdoDownload.addEventListener('onQueued', (mediaId: string, status: DownloadStatus) =>
-        this._onQueued(mediaId, status),
+        _onQueued(mediaId, status),
       ),
     );
-    this.state.unregister.push(
+    unregister.push(
       VdoDownload.addEventListener('onChanged', (mediaId: string, status: DownloadStatus) =>
-        this._onChanged(mediaId, status),
+        _onChanged(mediaId, status),
       ),
     );
-    this.state.unregister.push(
+    unregister.push(
       VdoDownload.addEventListener('onCompleted', (mediaId: string, status: DownloadStatus) =>
-        this._onCompleted(mediaId, status),
+        _onCompleted(mediaId, status),
       ),
     );
-    this.state.unregister.push(
+    unregister.push(
       VdoDownload.addEventListener('onFailed', (mediaId: string, status: DownloadStatus) =>
-        this._onFailed(mediaId, status),
+        _onFailed(mediaId, status),
       ),
     );
-    this.state.unregister.push(
+    unregister.push(
       VdoDownload.addEventListener('onDeleted', (mediaId: string) =>
-        this._onDeleted(mediaId),
+        _onDeleted(mediaId),
       ),
     );
-  }
 
-  componentWillUnmount() {
-    console.log('DownloadsScreen will unmount');
-    this.state.unregister.forEach((fn: () => void) => fn());
-  }
+    return () => {
+      console.log('DownloadsScreen will unmount');
+      unregister.forEach((fn: () => void) => fn());
+    }
+  }, [])
 
-  _onQueued(mediaId: string, downloadStatus: DownloadStatus) {
+  const _onQueued = (mediaId: string, downloadStatus: DownloadStatus) => {
     console.log('queued', mediaId);
-    this._refreshDownloadList();
+    _refreshDownloadList();
   }
 
-  _onChanged(mediaId: string, downloadStatus: DownloadStatus) {
+  const _onChanged = (mediaId: string, downloadStatus: DownloadStatus) => {
     console.log('changed', mediaId, downloadStatus.downloadPercent + '%');
-    this._updateItem(mediaId, downloadStatus);
+    _updateItem(mediaId, downloadStatus);
   }
 
-  _onCompleted(mediaId: string, downloadStatus: DownloadStatus) {
+  const _onCompleted = (mediaId: string, downloadStatus: DownloadStatus) => {
     console.log('completed', mediaId);
-    this._refreshDownloadList();
+    _refreshDownloadList();
   }
 
-  _onFailed(mediaId: string, downloadStatus: DownloadStatus) {
+  const _onFailed = (mediaId: string, downloadStatus: DownloadStatus) => {
     console.warn('failed', mediaId, downloadStatus.reason);
-    this._refreshDownloadList();
+    _refreshDownloadList();
   }
 
-  _onDeleted(mediaId: string) {
+  const _onDeleted = (mediaId: string) => {
     console.log('deleted', mediaId);
-    this._refreshDownloadList();
+    _refreshDownloadList();
   }
 
-  _refreshDownloadList() {
+  const _refreshDownloadList = () => {
     VdoDownload.query()
       .then((statusArray: Array<DownloadStatus>) => {
         console.log('query results', statusArray);
         //invalidateUI(statusList);
-        this.setState({downloadStatusArray: statusArray});
+        setDownloadStatusArray(statusArray)
       })
       .catch((err: {exception: string, msg: string}) => console.warn(err));
   }
 
-  _updateItem(mediaId: string, downloadStatus: DownloadStatus) {
+  const _updateItem = (mediaId: string, downloadStatus: DownloadStatus) => {
 
-    const updateIndex = this.state.downloadStatusArray.findIndex(
+    const updateIndex = downloadStatusArray.findIndex(
       (s: DownloadStatus) => s.mediaInfo.mediaId === mediaId,
     );
 
     if (updateIndex == -1) {
-      this._refreshDownloadList();
+      _refreshDownloadList();
     }
 
     console.log('updateIndex', updateIndex);
     
     if (updateIndex > -1) {
-      let newState = Object.assign({}, this.state);
-      newState.downloadStatusArray[updateIndex] = downloadStatus;
-      this.setState(newState);
+      let newDownloadStatusArray = downloadStatusArray;
+      newDownloadStatusArray[updateIndex] = downloadStatus;
+      setDownloadStatusArray(newDownloadStatusArray);
     }
   }
 
-  _getSelection(availableTracks: Array<Track>) {
+  const _getSelection = (availableTracks: Array<Track>) => {
     var selected: number[] = [];
     var audioIndex = availableTracks.findIndex((track: Track) => track.type === 'audio');
     var videoIndex = availableTracks.findIndex((track: Track) => track.type === 'video');
@@ -156,12 +146,12 @@ export default class DownloadsScreen extends Component<Props, State> {
     return selected;
   }
 
-  _getOptions(otp: string, playbackInfo: string) {
+  const _getOptions = (otp: string, playbackInfo: string) => {
     console.log('get download options');
     VdoDownload.getDownloadOptions({otp, playbackInfo})
       .then(({downloadOptions, enqueue}: {downloadOptions: DownloadOptions, enqueue: (selections: Array<number>) => void}) => {
         console.log('Got options', downloadOptions);
-        const selections = this._getSelection(downloadOptions.availableTracks);
+        const selections = _getSelection(downloadOptions.availableTracks);
         console.log('selections', selections);
       })
       .catch((errorDescription: {errorCode: number, errorMsg: string, httpStatusCode: number}) => {
@@ -169,12 +159,12 @@ export default class DownloadsScreen extends Component<Props, State> {
       });
   }
 
-  _enqueueDownload(otp: string, playbackInfo: string) {
+  const _enqueueDownload = (otp: string, playbackInfo: string) => {
     console.log('enqueue download');
     VdoDownload.getDownloadOptions({otp, playbackInfo /* ,customPlayerId: "avaI83RCHxfvLwhC"*/})
       .then(({downloadOptions, enqueue}: {downloadOptions: DownloadOptions, enqueue: (downloadSelections: {selections: Array<number>}) => void}) => {
         console.log('Got options', downloadOptions);
-        const selections = this._getSelection(downloadOptions.availableTracks);
+        const selections = _getSelection(downloadOptions.availableTracks);
         console.log('selections', selections);
         return enqueue({selections});
       })
@@ -184,83 +174,81 @@ export default class DownloadsScreen extends Component<Props, State> {
       });
   }
 
-  _stopDownload(mediaId: string) {
+  const _stopDownload = (mediaId: string) => {
     VdoDownload.stop([mediaId]).then(() => console.log('stop success')).catch((error: {exception: string, msg: string}) =>
       console.warn('Error stopping ' + mediaId),
     );
   }
 
-  _resumeDownload(mediaId: string) {
+  const _resumeDownload = (mediaId: string) => {
     VdoDownload.resume([mediaId]).then(() => console.log('resume success')).catch((error: {exception: string, msg: string}) =>
       console.warn('Error resuming ' + mediaId),
     );
   }
 
-  _removeDownload(mediaId: string) {
+  const _removeDownload = (mediaId: string) => {
     console.log('remove ' + mediaId);
     VdoDownload.remove([mediaId]).catch((error: {exception: string, msg: string}) =>
       console.warn('Error removing ' + mediaId),
     );
   }
 
-  _isExpired(mediaId: string) {
+  const _isExpired = (mediaId: string) => {
     VdoDownload.isExpired(mediaId).then((isExpired: boolean) => console.log('expiry: ', isExpired)).catch((error: {exception: string, msg: string}) =>
       console.warn('Error fetching expiry ' + mediaId),
     );
   }
 
-  render() {
-    return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.welcome}>Download samples</Text>
-        </View>
-        <View style={styles.listContainer}>
-          <FlatList
-            data={SAMPLE_EMBED_INFOS}
-            renderItem={({item, index}: {item: DownloadData, index: number}) => (
-              <DownloadListItem
-                title={'Sample ' + (index + 1)}
-                downloadStatus={this.state.downloadStatusArray.find(
-                  (e: DownloadStatus) => e.mediaInfo.mediaId === item.mediaId,
-                )}
-                onDownload={() =>
-                  this._enqueueDownload(item.otp, item.playbackInfo)
-                }
-                onPlay={() =>
-                  this.props.navigation.navigate('NativeControls', {
-                    embedInfo: makeOfflineEmbedInfo(
-                      item.mediaId,
-                      item.enableAutoResume,
-                    ),
-                  })
-                }
-                onStop={() => this._stopDownload(item.mediaId)}
-                onResume={() => this._resumeDownload(item.mediaId)}
-                onInfo={() => console.warn('show info: to be implemented')}
-                onDelete={() => this._removeDownload(item.mediaId)}
-              />
-            )}
-            keyExtractor={(item: DownloadData) => item.mediaId}
-            ItemSeparatorComponent={() => (
-              <View style={{flex: 1, height: 12}} />
-            )}
-            ListEmptyComponent={
-              <Text
-                style={{
-                  color: 'grey',
-                  fontSize: 20,
-                  fontStyle: 'italic',
-                  textAlign: 'center',
-                }}>
-                No downloads yet
-              </Text>
-            }
-          />
-        </View>
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.welcome}>Download samples</Text>
       </View>
-    );
-  }
+      <View style={styles.listContainer}>
+        <FlatList
+          data={SAMPLE_EMBED_INFOS}
+          renderItem={({item, index}: {item: DownloadData, index: number}) => (
+            <DownloadListItem
+              title={'Sample ' + (index + 1)}
+              downloadStatus={downloadStatusArray.find(
+                (e: DownloadStatus) => e.mediaInfo.mediaId === item.mediaId,
+              )}
+              onDownload={() =>
+                _enqueueDownload(item.otp, item.playbackInfo)
+              }
+              onPlay={() =>
+                props.navigation.navigate('NativeControls', {
+                  embedInfo: makeOfflineEmbedInfo(
+                    item.mediaId,
+                    item.enableAutoResume,
+                  ),
+                })
+              }
+              onStop={() => _stopDownload(item.mediaId)}
+              onResume={() => _resumeDownload(item.mediaId)}
+              onInfo={() => console.warn('show info: to be implemented')}
+              onDelete={() => _removeDownload(item.mediaId)}
+            />
+          )}
+          keyExtractor={(item: DownloadData) => item.mediaId}
+          ItemSeparatorComponent={() => (
+            <View style={{flex: 1, height: 12}} />
+          )}
+          ListEmptyComponent={
+            <Text
+              style={{
+                color: 'grey',
+                fontSize: 20,
+                fontStyle: 'italic',
+                textAlign: 'center',
+              }}>
+              No downloads yet
+            </Text>
+          }
+        />
+      </View>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({

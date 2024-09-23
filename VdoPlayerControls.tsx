@@ -1,5 +1,5 @@
-import React, {Component} from 'react';
-import {StyleSheet, Text, View, TouchableWithoutFeedback, Modal, Platform, StatusBar, SafeAreaView } from 'react-native';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {StyleSheet, Text, View, TouchableWithoutFeedback, Modal, Platform, StatusBar, SafeAreaView, LayoutChangeEvent } from 'react-native';
 import { InferProps } from 'prop-types';
 import {VdoPlayerView} from 'vdocipher-rn-bridge';
 import MatIcon from 'react-native-vector-icons/MaterialIcons';
@@ -15,222 +15,175 @@ function digitalTime(time: number) {
   return ~~(time / 60) + ':' + (time % 60 < 10 ? '0' : '') + (time % 60);
 }
 
+
 const MyPropTypes = VdoPropTypes;
 
-type Props = InferProps<typeof MyPropTypes>;
+export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>) {
 
-type State = {
-  error?: ErrorDescription
-  init: boolean,
-  loaded: boolean,
-  playWhenReady: boolean,
-  buffering: boolean,
-  ended: boolean,
-  duration: number,
-  position: number,
-  speed: number,
-  seekbarPosition: number,
-  isFullscreen: boolean,
-  isInPictureInPictureMode: boolean,
-  isCaptionLanguageAvailable: boolean,
-  isVideoTrackSelectionAvailable: boolean,
-  modalVisible: boolean,
-  items: any,
-  selectedTrack: any,
-  type: string,
-  initial: number
-};
+  const _player = useRef<VdoPlayerView>(null);
+  let _seekbarWidth!: number;
+  let propInterval: NodeJS.Timeout | string | number | undefined;
 
-export default class VdoPlayerControls extends Component<Props, State> {
-  _player: any;
-  _seekbarWidth!: number;
-  propInterval: NodeJS.Timeout | string | number | undefined;
-  static propTypes: typeof MyPropTypes;
+  const [init, setInit] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [playWhenReady, setPlayWhenReady] = useState(false);
+  const [buffering, setBuffering] = useState(false);
+  const [ended, setEnded] = useState(false);
+  const [duration, setDuration] = useState(0);
+  const [position, setPosition] = useState(0);
+  const [speed, setSpeed] = useState(1);
+  const [seekbarPosition, setSeekbarPosition] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isInPictureInPictureMode, setIsInPictureInPictureMode] = useState(false);
+  const [isCaptionLanguageAvailable, setIsCaptionLanguageAvailable] = useState(false);
+  const [isVideoTrackSelectionAvailable, setIsVideoTrackSelectionAvailable] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [items, setItems] = useState<any>([]);
+  const [selectedTrack, setSelectedTrack] = useState<Track>({
+    id: 0,
+    type: '',
+    language: '',
+    bitrate: 0,
+    width: 0,
+    height: 0,
+    label: ''
+  });
+  const [type, setType] = useState('video');
+  const [initial, setInitial] = useState(-1);
+  const [error, setError] = useState({});
 
-  constructor(props: Props) {
-    super(props);
-    this.state = {
-      init: false,
-      loaded: false,
-      playWhenReady: false,
-      buffering: false,
-      ended: false,
-      duration: 0,
-      position: 0,
-      speed: 1,
-      seekbarPosition: 0,
-      isFullscreen: false,
-      isInPictureInPictureMode: false,
-      isCaptionLanguageAvailable: false,
-      isVideoTrackSelectionAvailable: false,
-      modalVisible: false,
-      items: [],
-      selectedTrack: {},
-      type: 'video',
-      initial: -1
-    };
-  }
+  useEffect(() => {
+    console.log('VdoPlayerControls did mount');
 
-  componentWillUnmount() {
-    console.log('VdoPlayerControls will unmount');
-    clearInterval(this.propInterval);
-  }
+    return () => {
+      console.log('VdoPlayerControls will unmount');
+      // clearInterval(propInterval);
+    }
+  }, [])
 
-  _onInitSuccess = () => {
-    this.setState({
-      init: true,
-    });
+  const _onInitSuccess = () => {
+    setInit(true)
   };
 
-  _onInitFailure = (error: {errorDescription: ErrorDescription}) => {
-    this.setState({
-      init: false,
-      error: error.errorDescription,
-    });
+  const _onInitFailure = (error: {errorDescription: ErrorDescription}) => {
+    setInit(false)
+    setError(error.errorDescription)
   };
 
-  _onLoading = () => {
-    this.setState({
-      loaded: false,
-    });
+  const _onLoading = () => {
+    setLoaded(false)
   };
 
-  _onLoaded = (metaData: {mediaInfo: MediaInfo}) => {
-    this.setState({
-      loaded: true,
-      duration: metaData.mediaInfo.duration / 1000,
-    });
-    this.propInterval = setInterval(
-      () => {
-        this._player.getPlaybackPropertiesV2().then((playbackProperties: PlaybackProperty) => {
-          console.log("tp:", playbackProperties.totalPlayed);
-          console.log("tc: ",playbackProperties.totalCovered);
-        }    
-      )},
-      10000,
-    );
+  const _onLoaded = (metaData: {mediaInfo: MediaInfo}) => {
+    setLoaded(true)
+    setDuration( metaData.mediaInfo.duration / 1000)
+    // propInterval = setInterval(
+    //   () => {
+    //     _player.getPlaybackPropertiesV2().then((playbackProperties: PlaybackProperty) => {
+    //       console.log("tp:", playbackProperties.totalPlayed);
+    //       console.log("tc: ", playbackProperties.totalCovered);
+    //     }
+    //   )},
+    //   10000,
+    // );
 
-    this._isCaptionLanguageAvailable();
-    this._isVideoTrackSelectionAvailable();
+    _isCaptionLanguageAvailable();
+    _isVideoTrackSelectionAvailable();
   };
 
-  _onTracksChanged = (tracks: {availableTracks: Array<Track>, selectedTracks: Array<Track>}) => {
+  const _onTracksChanged = (tracks: {availableTracks: Array<Track>, selectedTracks: Array<Track>}) => {
     //todo
   };
 
-  _onPlayerStateChanged = (newState: {playWhenReady: boolean, playerState: string}) => {
+  const _onPlayerStateChanged = (newState: {playWhenReady: boolean, playerState: string}) => {
     const {playerState} = newState;
-    this.setState({
-      buffering: playerState === 'buffering',
-      ended: playerState === 'ended',
-    });
+    setBuffering(playerState === 'buffering')
+    setEnded(playerState === 'ended')
+
     if (playerState === 'ended') {
-      this.setState({
-        playWhenReady: false
-      });
+      setPlayWhenReady(false)
     }
   };
 
-  _onProgress = (progress: {currentTime: number}) => {
+  const _onProgress = (progress: {currentTime: number}) => {
     const newPosition = progress.currentTime / 1000;
-    const relativePosition = newPosition / this.state.duration;
-    const seekbarPosition = this._seekbarWidth * relativePosition;
+    const relativePosition = newPosition / duration;
+    const seekbarPosition = _seekbarWidth * relativePosition;
 
-    this.setState({
-      position: newPosition,
-      seekbarPosition,
-    });
+    setPosition(newPosition)
+    setSeekbarPosition(seekbarPosition)
   };
 
-  _onPlayButtonTouch = () => {
-    if (this.state.ended) {
-      this._player.seek(0);
-      this.setState(state => {
-        return {
-          playWhenReady: true,
-          position: 0,
-          seekbarPosition: 0
-        };
-      });
+  const _onPlayButtonTouch = () => {
+    if (ended) {
+      _player.current?.seek(0);
+      setPlayWhenReady(p => p = true)
+      setPosition(po => po = 0)
+      setSeekbarPosition(spo => spo = 0)
     } else {
-      this.setState(state => {
-        return {
-          playWhenReady: !state.playWhenReady,
-        };
-      });
+      setPlayWhenReady(p => p = !playWhenReady)
     }
   };
 
-  _onPictureInPictureModeChanged = (pictureInPictureModeInfo: {isInPictureInPictureMode: boolean}) => {
-    this.setState({
-      isInPictureInPictureMode:
-        pictureInPictureModeInfo.isInPictureInPictureMode,
-    });
-    if (this.props.onPictureInPictureModeChanged) {
-      this.props.onPictureInPictureModeChanged(
+  const _onPictureInPictureModeChanged = (pictureInPictureModeInfo: {isInPictureInPictureMode: boolean}) => {
+    setIsInPictureInPictureMode( pictureInPictureModeInfo.isInPictureInPictureMode)
+    if (props.onPictureInPictureModeChanged) {
+      props.onPictureInPictureModeChanged(
         pictureInPictureModeInfo.isInPictureInPictureMode,
       );
     }
   };
 
-  _onProgressTouch = (event: any) => {
-    if (this._seekbarWidth) {
+  const _onProgressTouch = (event: any) => {
+    if (_seekbarWidth) {
       var positionX = event.nativeEvent.locationX;
       var targetSeconds = Math.floor(
-        (positionX / this._seekbarWidth) * this.state.duration,
+        (positionX / _seekbarWidth) * duration,
       );
-      this._player.seek(targetSeconds * 1000);
+      _player.current?.seek(targetSeconds * 1000);
     }
   };
 
-  _toggleFullscreen = () => {
-    if (this.state.isFullscreen) {
+  const _toggleFullscreen = () => {
+    if (isFullscreen) {
       if (Platform.OS == 'android'){
         Orientation.lockToPortrait();
         StatusBar.setHidden(false);
       }
-      this.props.onExitFullscreen?.();
+      props.onExitFullscreen?.();
     } else {
       if (Platform.OS == 'android'){
         Orientation.lockToLandscape();
         StatusBar.setHidden(true);
       }
-      this.props.onEnterFullscreen?.();
+      props.onEnterFullscreen?.();
     }
 
-    this.setState({
-      isFullscreen: !this.state.isFullscreen,
-    });
+    setIsFullscreen(!isFullscreen)
   };
 
-  _isCaptionLanguageAvailable = () => {
-    this._player
-      .getCaptionLanguages()
-      .then(async (captionLanguages: Array<CaptionLanguage>) => {
-        if (captionLanguages.length > 0) {
-          this.setState({
-            isCaptionLanguageAvailable: true
-          })
-        }
-      });
-  }
-
-  _isVideoTrackSelectionAvailable = () => {
-    this._player.getVideoQualities()
-    .then(async (videoQualities: Array<VideoQuality>) => {
-      if (videoQualities.length > 1) {
-        this.setState({
-          isVideoTrackSelectionAvailable: true
-        })
+  const _isCaptionLanguageAvailable = () => {
+    _player.current?.getCaptionLanguages()
+    .then(async (captionLanguages: any) => {
+      if (captionLanguages.length > 0) {
+        setIsCaptionLanguageAvailable(true)
       }
     });
   }
 
-  _showCaptionTrackSelectionDialog = () => {
-    this._player
-      .getCaptionLanguages()
-      .then(async (captionLanguages: Array<CaptionLanguage>) => {
-        var selectedTrack = await this._player.getSelectedCaptionLanguage();
+  const _isVideoTrackSelectionAvailable = () => {
+    _player.current?.getVideoQualities()
+    .then(async (videoQualities: any) => {
+      if (videoQualities.length > 1) {
+        setIsVideoTrackSelectionAvailable(true)
+      }
+    });
+  }
+
+  const _showCaptionTrackSelectionDialog = () => {
+    _player.current?.getCaptionLanguages()
+      .then(async (captionLanguages: any) => {
+        var selectedTrack = await _player.current?.getSelectedCaptionLanguage();
 
         captionLanguages.forEach((captionLanguage: CaptionLanguage) => {
           captionLanguage.label = captionLanguage.language;
@@ -243,7 +196,7 @@ export default class VdoPlayerControls extends Component<Props, State> {
           selectedTrack = captionLanguages[captionLanguages.length - 1];
         }
 
-        this._loadDialog(captionLanguages, 'caption', selectedTrack);
+        _loadDialog(captionLanguages, 'caption', selectedTrack);
       })
       .catch((error: any) => {
         console.log('Api call error');
@@ -251,17 +204,16 @@ export default class VdoPlayerControls extends Component<Props, State> {
       });
   };
 
-  _showVideoTrackSelectionDialog = () => {
-    this._player
-      .getVideoQualities()
-      .then(async (videoQualities: Array<VideoQuality>) => {
+  const _showVideoTrackSelectionDialog = () => {
+    _player.current?.getVideoQualities()
+      .then(async (videoQualities: any) => {
         var [videoDuration, selectedTrack, isAdaptive] = await Promise.all([
-          this._player.getDuration(),
-          this._player.getSelectedVideoQuality(),
-          this._player.isAdaptive(),
+          _player.current?.getDuration(),
+          _player.current?.getSelectedVideoQuality(),
+          _player.current?.isAdaptive(),
         ]);
         if (Platform.OS == "android") {
-          var audioQuality = await this._player.getSelectedAudioQuality();
+          var audioQuality: any = await _player.current?.getSelectedAudioQuality();
         }
         videoQualities.forEach(async (videoQuality: VideoQuality & {label?: string}) => {
           if (Platform.OS == "android") {
@@ -272,15 +224,16 @@ export default class VdoPlayerControls extends Component<Props, State> {
               (videoQuality.bitrate) / 1024;
           }
           var roundedOffBitrateInKbps = Math.round(bitrateInKbps / 10.0) * 10;
+          var videoDurations: any = videoDuration;
           if (Platform.OS == "android") {
-            var dataExpenditureInMB = this._totalDataExpenditureInMb(
+            var dataExpenditureInMB = _totalDataExpenditureInMb(
               videoQuality.bitrate + audioQuality.bitrate,
-              videoDuration.duration,
+              videoDurations.duration,
             );
           } else {
-            var dataExpenditureInMB = this._totalDataExpenditureInMb(
+            var dataExpenditureInMB = _totalDataExpenditureInMb(
               videoQuality.bitrate,
-              videoDuration.duration,
+              videoDurations.duration,
             );
           }
           videoQuality.label =
@@ -297,7 +250,7 @@ export default class VdoPlayerControls extends Component<Props, State> {
           selectedTrack = videoQualities[videoQualities.length - 1];
         }
 
-        this._loadDialog(videoQualities, 'video', selectedTrack);
+        _loadDialog(videoQualities, 'video', selectedTrack);
       })
       .catch((error: any) => {
         console.log('Api call error', error);
@@ -305,7 +258,7 @@ export default class VdoPlayerControls extends Component<Props, State> {
       });
   };
 
-  _totalDataExpenditureInMb = (bitsPerSec: number, videoDuration: number) => {
+  const _totalDataExpenditureInMb = (bitsPerSec: number, videoDuration: number) => {
     var totalBytes =
       bitsPerSec <= 0 ? 0 : (bitsPerSec * (videoDuration / 1000)) / 8;
     if (totalBytes == 0) {
@@ -324,20 +277,19 @@ export default class VdoPlayerControls extends Component<Props, State> {
     }
   };
 
-  _loadDialog = async (items: any, type: string, selectedTrack: any) => {
-    var initial = this.initialSelectedTrack(items, selectedTrack);
+  const _loadDialog = async (items: any, type: string, selectedTrack: any) => {
+    var initial = initialSelectedTrack(items, selectedTrack);
 
-    this.setState({
-      items: items,
-      selectedTrack: selectedTrack,
-      type: type,
-      initial: initial
-    })
-    this.changeModalVisibility();
+    setItems(items)
+    setSelectedTrack(selectedTrack)
+    setType(type)
+    setInitial(initial)
+
+    changeModalVisibility();
   };
 
-  initialSelectedTrack(items: any, selectedTrack: any) {
-    var initial = this.state.items.length
+  const initialSelectedTrack = (items: any, selectedTrack: any) => {
+    var initial = items.length
     for (var index = 0; index < items.length; index ++) {
       if (items[index].id == selectedTrack.id) {
         initial = index + 1;
@@ -346,56 +298,60 @@ export default class VdoPlayerControls extends Component<Props, State> {
     }
   }
 
-  changeModalVisibility() {
-    this.setState({
-      modalVisible: !this.state.modalVisible,
-    })
+  const changeModalVisibility = () => {
+    setModalVisible(!modalVisible)
   }
 
-  handleRadioChange(e: any) {
-    if (this.state.selectedTrack.id == e.id) {
+  const handleRadioChange = (e: any) => {
+    if (selectedTrack.id == e.id) {
       return;
     }
-    this.changeModalVisibility();
-    var items = this.state.items;
+    changeModalVisibility();
+    var player = _player;
     for (var index = 0; index < items.length; index ++) {
       if (items[index].id === e.id) {
-        Promise.resolve(this.setState({
-          selectedTrack: items[index],
-        })).then(()=>{
-          if (this.state.selectedTrack.id == -2) {
-            this._player.enableAdaptiveVideo();
-          } else if (this.state.selectedTrack.id == -1) {
-            this._player.disableCaptions();
-          } else if (this.state.type === 'video') {
-            this._player.setVideoQuality(this.state.selectedTrack);
-          } else {
-            this._player.setCaptionLanguage(this.state.selectedTrack);
-          }
-        })
-       break;
+        const nextSelectedTrack: Track = items[index];
+        setSelectedTrack(s => s = nextSelectedTrack);
+        if (nextSelectedTrack.id == -2) {
+          player.current?.enableAdaptiveVideo();
+        } else if (nextSelectedTrack.id == -1) {
+          player.current?.disableCaptions();
+        } else if (type === 'video') {
+          player.current?.setVideoQuality(nextSelectedTrack);
+        } else {
+          player.current?.setCaptionLanguage(nextSelectedTrack);
+        }
+        break;
       }
     }
   }
 
-  _renderModal() {
+  const useComponentWidth = () => {
+    const [layoutWidth, setLayoutWidth] = useState(0);
+    const onLayout = useCallback((event: LayoutChangeEvent) => {
+      setLayoutWidth(event.nativeEvent.layout.width);
+    }, []);
+      return { layoutWidth, onLayout };
+  };
+
+  const _renderModal = () => {
     return (
       <View style={styles.player.centeredView}>
       <Modal
         animationType="slide"
         transparent={true}
-        visible={this.state.modalVisible}
+        visible={modalVisible}
         onRequestClose={() => {
-          this.changeModalVisibility();
+          changeModalVisibility();
         }}>
         <View style={styles.player.centeredView}>
           <View style={styles.player.modalView}>
             <RadioButtonRN
               style={{width: 200}}
-              data={this.state.items}
-              selectedBtn={(e: any) =>this.handleRadioChange(e)}
+              data={items}
+              selectedBtn={(e: any) => handleRadioChange(e)}
               box={false}
-              initial={this.state.initial}
+              initial={initial}
               />
           </View>
         </View>
@@ -404,21 +360,21 @@ export default class VdoPlayerControls extends Component<Props, State> {
     )
   }
 
-  _renderSeekbar() {
+  const _renderSeekbar = () => {
+    const {layoutWidth, onLayout} = useComponentWidth();
+    _seekbarWidth = layoutWidth;
     return (
-      <TouchableWithoutFeedback onPress={this._onProgressTouch}>
+      <TouchableWithoutFeedback onPress={_onProgressTouch}>
         <View style={styles.seekbar.container}>
           <View
             style={styles.seekbar.track}
-            onLayout={(event: any) =>
-              (this._seekbarWidth = event.nativeEvent.layout.width)
-            }>
+            onLayout={onLayout}>
             <View
-              style={[styles.seekbar.fill, {width: this.state.seekbarPosition}]}
+              style={[styles.seekbar.fill, {width: seekbarPosition}]}
             />
           </View>
           <View
-            style={[styles.seekbar.handle, {left: this.state.seekbarPosition}]}>
+            style={[styles.seekbar.handle, {left: seekbarPosition}]}>
             <View style={[styles.seekbar.circle, {backgroundColor: '#FFF'}]} />
           </View>
         </View>
@@ -426,82 +382,76 @@ export default class VdoPlayerControls extends Component<Props, State> {
     );
   }
 
-  render() {
-    var showPlayIcon = !this.state.playWhenReady;
-    var isFullscreen = this.state.isFullscreen;
-    var isInPictureInPictureMode = this.state.isInPictureInPictureMode;
-    var isCaptionLanguageAvailable = this.state.isCaptionLanguageAvailable;
-    var isVideoTrackSelectionAvailable = this.state.isVideoTrackSelectionAvailable;
+  var showPlayIcon = !playWhenReady;
 
-    return (
-      <SafeAreaView style={styles.player.container}>
-        <VdoPlayerView
-          ref={player => this._player = player}
-          style={styles.player.video}
-          {...this.props}
-          playWhenReady={this.state.playWhenReady}
-          showNativeControls={false}
-          onInitializationSuccess={this._onInitSuccess}
-          onInitializationFailure={this._onInitFailure}
-          onLoading={this._onLoading}
-          onLoaded={this._onLoaded}
-          onTracksChanged={this._onTracksChanged}
-          onPlayerStateChanged={this._onPlayerStateChanged}
-          onProgress={this._onProgress}
-          onPictureInPictureModeChanged={this._onPictureInPictureModeChanged}
-        />
-        {!isInPictureInPictureMode && (
-          <View style={styles.controls.container}>
-            <TouchableWithoutFeedback onPress={this._onPlayButtonTouch}>
-              <Icon
-                name={showPlayIcon ? 'play' : 'pause'}
-                size={30}
-                color="#FFF"
-              />
-            </TouchableWithoutFeedback>
-            <Text style={styles.controls.position}>
-              {digitalTime(Math.floor(this.state.position))}
-            </Text>
-            {this._renderSeekbar()}
-            {this._renderModal()}
-            <Text style={styles.controls.duration}>
-              {digitalTime(Math.floor(this.state.duration))}
-            </Text>
-            { isCaptionLanguageAvailable &&
-              <TouchableWithoutFeedback
-                onPress={() => this._showCaptionTrackSelectionDialog()}>
-                <MatIcon
-                  name="closed-caption"
-                  style={styles.controls.captions}
-                  size={30}
-                  color="#FFF"
-                />
-              </TouchableWithoutFeedback>
-            }
-            { isVideoTrackSelectionAvailable &&
-              <TouchableWithoutFeedback
-                onPress={() => this._showVideoTrackSelectionDialog()}>
-                <MatIcon
-                  name="high-quality"
-                  style={styles.controls.quality}
-                  size={30}
-                  color="#FFF"
-                />
-              </TouchableWithoutFeedback>
-            }
-            <TouchableWithoutFeedback onPress={this._toggleFullscreen}>
+  return (
+    <SafeAreaView style={styles.player.container}>
+      <VdoPlayerView
+        ref={_player}
+        style={styles.player.video}
+        {...props}
+        playWhenReady={playWhenReady}
+        showNativeControls={false}
+        onInitializationSuccess={_onInitSuccess}
+        onInitializationFailure={_onInitFailure}
+        onLoading={_onLoading}
+        onLoaded={_onLoaded}
+        onTracksChanged={_onTracksChanged}
+        onPlayerStateChanged={_onPlayerStateChanged}
+        onProgress={_onProgress}
+        onPictureInPictureModeChanged={_onPictureInPictureModeChanged}
+      />
+      {!isInPictureInPictureMode && (
+        <View style={styles.controls.container}>
+          <TouchableWithoutFeedback onPress={_onPlayButtonTouch}>
+            <Icon
+              name={showPlayIcon ? 'play' : 'pause'}
+              size={30}
+              color="#FFF"
+            />
+          </TouchableWithoutFeedback>
+          <Text style={styles.controls.position}>
+            {digitalTime(Math.floor(position))}
+          </Text>
+          {_renderSeekbar()}
+          {_renderModal()}
+          <Text style={styles.controls.duration}>
+            {digitalTime(Math.floor(duration))}
+          </Text>
+          { isCaptionLanguageAvailable &&
+            <TouchableWithoutFeedback
+              onPress={() => _showCaptionTrackSelectionDialog()}>
               <MatIcon
-                name={isFullscreen ? 'fullscreen-exit' : 'fullscreen'}
-                style={styles.controls.fullscreen}
+                name="closed-caption"
+                style={styles.controls.captions}
                 size={30}
                 color="#FFF"
               />
             </TouchableWithoutFeedback>
-          </View>
-        )}
-      </SafeAreaView>
-    );
-  }
+          }
+          { isVideoTrackSelectionAvailable &&
+            <TouchableWithoutFeedback
+              onPress={() => _showVideoTrackSelectionDialog()}>
+              <MatIcon
+                name="high-quality"
+                style={styles.controls.quality}
+                size={30}
+                color="#FFF"
+              />
+            </TouchableWithoutFeedback>
+          }
+          <TouchableWithoutFeedback onPress={_toggleFullscreen}>
+            <MatIcon
+              name={isFullscreen ? 'fullscreen-exit' : 'fullscreen'}
+              style={styles.controls.fullscreen}
+              size={30}
+              color="#FFF"
+            />
+          </TouchableWithoutFeedback>
+        </View>
+      )}
+    </SafeAreaView>
+  );
 }
 
 VdoPlayerControls.propTypes = MyPropTypes;
