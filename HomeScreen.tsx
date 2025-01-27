@@ -11,14 +11,20 @@ import {StyleSheet, Text, Button, View, NativeModules, SafeAreaView, Platform} f
 import {startVideoScreen} from 'vdocipher-rn-bridge';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import { RootStackParamList } from './type';
-import { EmbedInfo } from 'vdocipher-rn-bridge/type';
+import { EmbedInfo, PlayerSettings } from 'vdocipher-rn-bridge/type';
+
+const {VdoPlayerSettings, VdoPreCacheManager} = NativeModules;
 
 export default function HomeScreen(props: NativeStackScreenProps<RootStackParamList, 'Home'>) {
 
   const [otp, setOtp] = useState('');
   const [playbackInfo, setPlaybackInfo] = useState('');
+  const preCacheSettings = {mediaId: "015de7e97f434865aa155ca83b690f4b", customPlayerId: "", languageCode: "", cacheSize: 100}
+  const playerSettings: PlayerSettings = {vdoPlaybackModeAndroid: "continue_playback_on_app_exit", bufferingGoalMs: 100}
 
   useEffect(() => {
+    // VdoPlayerSettings.applySettings(playerSettings);
+    // VdoPreCacheManager.cacheVideo(preCacheSettings);
     fetch('https://dev.vdocipher.com/api/site/homepage_video')
     .then(res => res.json())
     .then(resp => {
