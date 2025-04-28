@@ -55,7 +55,7 @@ public class PlayerActivity extends ReactActivity {
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
-    protected void onUserLeaveHint() {
+    public void onUserLeaveHint() {
         super.onUserLeaveHint();
 //        switch to PiP mode if the user presses the home or recent button,
         enterPictureInPictureMode(new PictureInPictureParams.Builder().build());

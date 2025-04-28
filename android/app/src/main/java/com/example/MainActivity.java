@@ -45,7 +45,7 @@ public class MainActivity extends ReactActivity {
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
-    protected void onUserLeaveHint() {
+    public void onUserLeaveHint() {
         super.onUserLeaveHint();
 //        switch to PiP mode if the user presses the home or recent button,
 //        Adding fragment check to ensure only the screen with player fragment can go into pip, remove this check

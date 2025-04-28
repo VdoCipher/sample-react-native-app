@@ -24,22 +24,24 @@ target 'example' do
     :path => config[:reactNativePath],
     # Hermes is now enabled by default. Disable by setting this flag to false.
     :hermes_enabled => flags[:hermes_enabled] = false,
-    :fabric_enabled => flags[:fabric_enabled],
+    :new_arch_enabled => false,
+    # :fabric_enabled => flags[:fabric_enabled],
    
     # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
-  target 'exampleTests' do
-    inherit! :complete
-    # Pods for testing
-  end
+  # target 'exampleTests' do
+  #   inherit! :complete
+  #   # Pods for testing
+  # end
 
   post_install do |installer|
     react_native_post_install(
       installer,
       config[:reactNativePath],
-      :mac_catalyst_enabled => false
+      :mac_catalyst_enabled => false,
+      # :ccache_enabled => true
     )
   end
 end
