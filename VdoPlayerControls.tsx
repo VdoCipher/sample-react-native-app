@@ -61,6 +61,15 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
     }
   }, [])
 
+  useEffect(() => {
+    if (!_player.current) return;
+    if (playWhenReady) {
+      _player.current.play();
+    } else {
+      _player.current.pause();
+    }
+  }, [playWhenReady]);
+
   const _onInitSuccess = () => {
     setInit(true)
   };
@@ -390,7 +399,6 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
         ref={_player}
         style={styles.player.video}
         {...props}
-        playWhenReady={playWhenReady}
         showNativeControls={false}
         onInitializationSuccess={_onInitSuccess}
         onInitializationFailure={_onInitFailure}

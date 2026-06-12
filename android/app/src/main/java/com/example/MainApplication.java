@@ -1,19 +1,19 @@
 package com.example;
 
 import android.app.Application;
-import android.content.Context;
 
 import com.facebook.react.PackageList;
 import com.facebook.react.ReactApplication;
+import com.facebook.react.ReactHost;
 import com.facebook.react.ReactNativeHost;
 import com.facebook.react.ReactPackage;
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint;
+import com.facebook.react.defaults.DefaultReactHost;
 import com.facebook.react.defaults.DefaultReactNativeHost;
 import com.facebook.react.soloader.OpenSourceMergedSoMapping;
 import com.facebook.soloader.SoLoader;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 public class MainApplication extends Application implements ReactApplication {
@@ -46,7 +46,7 @@ public class MainApplication extends Application implements ReactApplication {
         }
 
         @Override
-        protected Boolean isHermesEnabled() {
+        protected boolean isHermesEnabled() {
           return BuildConfig.IS_HERMES_ENABLED;
         }
     };
@@ -54,6 +54,14 @@ public class MainApplication extends Application implements ReactApplication {
     @Override
     public ReactNativeHost getReactNativeHost() {
         return mReactNativeHost;
+    }
+
+    @Override
+    public ReactHost getReactHost() {
+        // Required for the New Architecture (bridgeless): ReactActivityDelegate uses
+        // getReactHost() instead of getReactNativeHost() when bridgeless is enabled.
+        // Third arg (jsRuntimeFactory) is null -> picks Hermes/JSC based on isHermesEnabled().
+        return DefaultReactHost.getDefaultReactHost(getApplicationContext(), getReactNativeHost(), null);
     }
 
     @Override
@@ -67,33 +75,6 @@ public class MainApplication extends Application implements ReactApplication {
         if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
             // If you opted-in for the New Architecture, we load the native entry point for this app.
             DefaultNewArchitectureEntryPoint.load();
-          }
-          initializeFlipper(this); // Remove this line if you don't want Flipper enabled
-    }
-
-    /**
-     * Loads Flipper in React Native templates.
-     *
-     * @param context
-     */
-    private static void initializeFlipper(Context context) {
-        if (BuildConfig.DEBUG) {
-            try {
-                /*
-                We use reflection here to pick up the class that initializes Flipper,
-                since Flipper library is not available in release mode
-                */
-                Class<?> aClass = Class.forName("com.facebook.flipper.ReactNativeFlipper");
-                aClass.getMethod("initializeFlipper", Context.class).invoke(null, context);
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            } catch (NoSuchMethodException e) {
-                e.printStackTrace();
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
-                e.printStackTrace();
-            }
         }
     }
 }

@@ -69,3 +69,6 @@ buck-out/
 
 ios/Podfile.lock
 ios/.xcode.env
+
+
+android/app/.cxx
