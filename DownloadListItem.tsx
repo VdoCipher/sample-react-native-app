@@ -62,7 +62,12 @@ export default function DownloadListItem(props:{
           style={{flex: 1, paddingLeft: 8, fontSize: 22, fontWeight: 'bold'}}>
           {title}
         </Text>
-        <TouchableOpacity onPress={onDownload} activeOpacity={0.8}>
+        <TouchableOpacity
+          onPress={onDownload}
+          activeOpacity={0.8}
+          accessible
+          accessibilityLabel="download-start"
+          testID="download-start">
           <Image source={require('./baseline_save_alt_black_18.png')} />
         </TouchableOpacity>
       </View>
@@ -81,6 +86,9 @@ export default function DownloadListItem(props:{
           onPress={onPlay}
           activeOpacity={0.8}
           disabled={!playEnabled}
+          accessible
+          accessibilityLabel="download-play"
+          testID="download-play"
           style={{
             width: 80,
             height: 80,
@@ -102,6 +110,8 @@ export default function DownloadListItem(props:{
             disabled={!stopOrResumeEnabled}
             title={"Stop"}
             onPress={onStop}
+            testID="download-stop"
+            accessibilityLabel="download-stop"
           />
         </View>
         <View style={{
@@ -114,6 +124,8 @@ export default function DownloadListItem(props:{
             disabled={!stopOrResumeEnabled}
             title={"Resume"}
             onPress={onResume}
+            testID="download-resume"
+            accessibilityLabel="download-resume"
           />
         </View>
         {/* <TouchableOpacity
@@ -135,6 +147,9 @@ export default function DownloadListItem(props:{
           onPress={onDelete}
           activeOpacity={0.8}
           disabled={!deleteEnabled}
+          accessible
+          accessibilityLabel="download-delete"
+          testID="download-delete"
           style={{
             width: 80,
             height: 80,

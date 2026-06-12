@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {StyleSheet, Text, View, TouchableWithoutFeedback, Modal, Platform, StatusBar, SafeAreaView, LayoutChangeEvent } from 'react-native';
+import {StyleSheet, Text, View, Pressable, Modal, Platform, StatusBar, SafeAreaView, LayoutChangeEvent } from 'react-native';
 import { InferProps } from 'prop-types';
 import {VdoPlayerView} from 'vdocipher-rn-bridge';
 import MatIcon from 'react-native-vector-icons/MaterialIcons';
@@ -18,6 +18,8 @@ function digitalTime(time: number) {
 
 const MyPropTypes = VdoPropTypes;
 
+const PLAYBACK_SPEEDS = [1.0, 1.25, 1.5, 1.75, 2.0, 0.5, 0.75];
+
 export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>) {
 
   const _player = useRef<VdoPlayerView>(null);
@@ -31,9 +33,9 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
   const [ended, setEnded] = useState(false);
   const [duration, setDuration] = useState(0);
   const [position, setPosition] = useState(0);
-  const [speed, setSpeed] = useState(1);
   const [seekbarPosition, setSeekbarPosition] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [playbackSpeed, setPlaybackSpeedState] = useState(1.0);
   const [isInPictureInPictureMode, setIsInPictureInPictureMode] = useState(false);
   const [isCaptionLanguageAvailable, setIsCaptionLanguageAvailable] = useState(false);
   const [isVideoTrackSelectionAvailable, setIsVideoTrackSelectionAvailable] = useState(false);
@@ -51,6 +53,21 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
   const [type, setType] = useState('video');
   const [initial, setInitial] = useState(-1);
   const [error, setError] = useState({});
+  const [layoutWidth, setLayoutWidth] = useState(0);
+  const onLayout = useCallback((event: LayoutChangeEvent) => {
+    setLayoutWidth(event.nativeEvent.layout.width);
+  }, []);
+  _seekbarWidth = layoutWidth;
+
+  const _cyclePlaybackSpeed = () => {
+    if (!_player.current) {
+      return;
+    }
+    const i = PLAYBACK_SPEEDS.indexOf(playbackSpeed);
+    const next = PLAYBACK_SPEEDS[(i + 1) % PLAYBACK_SPEEDS.length];
+    setPlaybackSpeedState(next);
+    _player.current.setPlaybackSpeed(next);
+  };
 
   useEffect(() => {
     console.log('VdoPlayerControls did mount');
@@ -116,11 +133,12 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
 
   const _onProgress = (progress: {currentTime: number}) => {
     const newPosition = progress.currentTime / 1000;
-    const relativePosition = newPosition / duration;
-    const seekbarPosition = _seekbarWidth * relativePosition;
+    const relativePosition =
+      duration > 0 ? Math.min(Math.max(newPosition / duration, 0), 1) : 0;
+    const seekbarPosition = _seekbarWidth > 0 ? _seekbarWidth * relativePosition : 0;
 
-    setPosition(newPosition)
-    setSeekbarPosition(seekbarPosition)
+    setPosition(newPosition);
+    setSeekbarPosition(seekbarPosition);
   };
 
   const _onPlayButtonTouch = () => {
@@ -335,14 +353,6 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
     }
   }
 
-  const useComponentWidth = () => {
-    const [layoutWidth, setLayoutWidth] = useState(0);
-    const onLayout = useCallback((event: LayoutChangeEvent) => {
-      setLayoutWidth(event.nativeEvent.layout.width);
-    }, []);
-      return { layoutWidth, onLayout };
-  };
-
   const _renderModal = () => {
     return (
       <View style={styles.player.centeredView}>
@@ -370,24 +380,20 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
   }
 
   const _renderSeekbar = () => {
-    const {layoutWidth, onLayout} = useComponentWidth();
-    _seekbarWidth = layoutWidth;
     return (
-      <TouchableWithoutFeedback onPress={_onProgressTouch}>
-        <View style={styles.seekbar.container}>
-          <View
-            style={styles.seekbar.track}
-            onLayout={onLayout}>
-            <View
-              style={[styles.seekbar.fill, {width: seekbarPosition}]}
-            />
-          </View>
-          <View
-            style={[styles.seekbar.handle, {left: seekbarPosition}]}>
-            <View style={[styles.seekbar.circle, {backgroundColor: '#FFF'}]} />
-          </View>
+      <Pressable
+        onPress={_onProgressTouch}
+        accessible
+        accessibilityLabel="player-seekbar"
+        testID="player-seekbar"
+        style={styles.seekbar.container}>
+        <View style={styles.seekbar.track} onLayout={onLayout}>
+          <View style={[styles.seekbar.fill, {width: seekbarPosition}]} />
         </View>
-      </TouchableWithoutFeedback>
+        <View style={[styles.seekbar.handle, {left: seekbarPosition}]}>
+          <View style={[styles.seekbar.circle, {backgroundColor: '#FFF'}]} />
+        </View>
+      </Pressable>
     );
   }
 
@@ -411,13 +417,17 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
       />
       {!isInPictureInPictureMode && (
         <View style={styles.controls.container}>
-          <TouchableWithoutFeedback onPress={_onPlayButtonTouch}>
+          <Pressable
+            onPress={_onPlayButtonTouch}
+            accessible
+            accessibilityLabel="player-play-pause"
+            testID="player-play-pause">
             <Icon
               name={showPlayIcon ? 'play' : 'pause'}
               size={30}
               color="#FFF"
             />
-          </TouchableWithoutFeedback>
+          </Pressable>
           <Text style={styles.controls.position}>
             {digitalTime(Math.floor(position))}
           </Text>
@@ -427,35 +437,52 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
             {digitalTime(Math.floor(duration))}
           </Text>
           { isCaptionLanguageAvailable &&
-            <TouchableWithoutFeedback
-              onPress={() => _showCaptionTrackSelectionDialog()}>
+            <Pressable
+              onPress={() => _showCaptionTrackSelectionDialog()}
+              accessible
+              accessibilityLabel="player-captions"
+              testID="player-captions">
               <MatIcon
                 name="closed-caption"
                 style={styles.controls.captions}
                 size={30}
                 color="#FFF"
               />
-            </TouchableWithoutFeedback>
+            </Pressable>
           }
           { isVideoTrackSelectionAvailable &&
-            <TouchableWithoutFeedback
-              onPress={() => _showVideoTrackSelectionDialog()}>
+            <Pressable
+              onPress={() => _showVideoTrackSelectionDialog()}
+              accessible
+              accessibilityLabel="player-quality"
+              testID="player-quality">
               <MatIcon
                 name="high-quality"
                 style={styles.controls.quality}
                 size={30}
                 color="#FFF"
               />
-            </TouchableWithoutFeedback>
+            </Pressable>
           }
-          <TouchableWithoutFeedback onPress={_toggleFullscreen}>
+          <Pressable
+            onPress={_cyclePlaybackSpeed}
+            accessible
+            accessibilityLabel="player-speed"
+            testID="player-speed">
+            <Text style={styles.controls.speed}>{`${playbackSpeed}x`}</Text>
+          </Pressable>
+          <Pressable
+            onPress={_toggleFullscreen}
+            accessible
+            accessibilityLabel="player-fullscreen"
+            testID="player-fullscreen">
             <MatIcon
               name={isFullscreen ? 'fullscreen-exit' : 'fullscreen'}
               style={styles.controls.fullscreen}
               size={30}
               color="#FFF"
             />
-          </TouchableWithoutFeedback>
+          </Pressable>
         </View>
       )}
     </SafeAreaView>
@@ -563,6 +590,12 @@ const styles = {
     },
     quality: {
       marginLeft: 10,
+    },
+    speed: {
+      marginLeft: 10,
+      color: '#FFF',
+      fontSize: 16,
+      fontWeight: 'bold',
     },
   }),
   seekbar: StyleSheet.create({
