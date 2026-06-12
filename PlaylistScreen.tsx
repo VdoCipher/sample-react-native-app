@@ -1,4 +1,4 @@
-import React, {Component, useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {StyleSheet, Text, SafeAreaView, Image, TouchableOpacity, FlatList, View} from 'react-native';
 import {VdoPlayerView} from 'vdocipher-rn-bridge';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -118,11 +118,6 @@ const styles = StyleSheet.create({
     height: 'auto',
     width: '100%',
     resizeMode: 'contain'
-  },
-  description: {
-    fontSize: 20,
-    textAlign: 'center',
-    margin: 10,
   },
   videoList: {
     marginTop: 20,

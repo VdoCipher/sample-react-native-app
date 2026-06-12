@@ -1,4 +1,4 @@
-import React, {Component, useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 import {VdoPlayerView} from 'vdocipher-rn-bridge';
 import { EmbedInfo } from 'vdocipher-rn-bridge/type';

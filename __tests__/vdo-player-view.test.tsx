@@ -9,7 +9,6 @@ import 'react-native';
 import React from 'react';
 import renderer, { act } from 'react-test-renderer';
 
-// ─── Mocks ────────────────────────────────────────────────────────────────────
 
 // VdoPlayerView: forwardRef so _player.current is populated with mock methods
 jest.mock('vdocipher-rn-bridge', () => {
@@ -74,7 +73,6 @@ jest.mock('radio-buttons-react-native', () => ({
   default: 'RadioButtonRN',
 }));
 
-// ─── Imports (after mocks) ────────────────────────────────────────────────────
 
 import { VdoPlayerView } from 'vdocipher-rn-bridge';
 import VdoPlayerControls from '../VdoPlayerControls';
@@ -83,7 +81,6 @@ import JSControlsScreen from '../JSControlsScreen';
 import PlaylistScreen from '../PlaylistScreen';
 import Orientation from 'react-native-orientation';
 
-// ─── Fixtures ─────────────────────────────────────────────────────────────────
 
 const mockEmbedInfo = {
   otp: '20160313versUSE3233GHgXyKF5ph',
@@ -107,7 +104,6 @@ const createScreenProps = (screenName: string, params: Record<string, any> = {})
 // Shorthand for accessing mock methods
 const playerMethods = () => (jest.requireMock('vdocipher-rn-bridge') as any).__playerMethods;
 
-// ─── VdoPlayerView props — NativeControlsScreen ───────────────────────────────
 
 describe('NativeControlsScreen — VdoPlayerView props', () => {
   beforeEach(() => jest.clearAllMocks());
@@ -165,7 +161,6 @@ describe('NativeControlsScreen — VdoPlayerView props', () => {
   });
 });
 
-// ─── VdoPlayerControls — VdoPlayerView props ─────────────────────────────────
 
 describe('VdoPlayerControls — VdoPlayerView props', () => {
   beforeEach(() => jest.clearAllMocks());
@@ -203,7 +198,6 @@ describe('VdoPlayerControls — VdoPlayerView props', () => {
   });
 });
 
-// ─── VdoPlayerControls — onLoaded ─────────────────────────────────────────────
 
 describe('VdoPlayerControls — onLoaded callback', () => {
   beforeEach(() => jest.clearAllMocks());
@@ -323,7 +317,6 @@ describe('VdoPlayerControls — onLoaded callback', () => {
   });
 });
 
-// ─── VdoPlayerControls — onPlayerStateChanged ────────────────────────────────
 
 describe('VdoPlayerControls — onPlayerStateChanged callback', () => {
   beforeEach(() => jest.clearAllMocks());
@@ -376,7 +369,6 @@ describe('VdoPlayerControls — onPlayerStateChanged callback', () => {
   });
 });
 
-// ─── VdoPlayerControls — onProgress ──────────────────────────────────────────
 
 describe('VdoPlayerControls — onProgress callback', () => {
   it('updates the position display after receiving progress events', async () => {
@@ -406,7 +398,6 @@ describe('VdoPlayerControls — onProgress callback', () => {
   });
 });
 
-// ─── VdoPlayerControls — onPictureInPictureModeChanged ───────────────────────
 
 describe('VdoPlayerControls — onPictureInPictureModeChanged callback', () => {
   beforeEach(() => jest.clearAllMocks());
@@ -477,7 +468,6 @@ describe('VdoPlayerControls — onPictureInPictureModeChanged callback', () => {
   });
 });
 
-// ─── VdoPlayerControls — play button ─────────────────────────────────────────
 
 describe('VdoPlayerControls — play/pause button', () => {
   beforeEach(() => jest.clearAllMocks());
@@ -563,7 +553,6 @@ describe('VdoPlayerControls — play/pause button', () => {
   });
 });
 
-// ─── VdoPlayerControls — caption track selection ─────────────────────────────
 
 describe('VdoPlayerControls — caption track selection', () => {
   beforeEach(() => jest.clearAllMocks());
@@ -652,7 +641,6 @@ describe('VdoPlayerControls — caption track selection', () => {
   });
 });
 
-// ─── VdoPlayerControls — video quality selection ─────────────────────────────
 
 describe('VdoPlayerControls — video quality selection', () => {
   beforeEach(() => jest.clearAllMocks());
@@ -723,7 +711,6 @@ describe('VdoPlayerControls — video quality selection', () => {
 });
 
 
-// ─── VdoPlayerControls — seekbar tap → seek math ─────────────────────────────
 
 describe('VdoPlayerControls — seekbar seek math', () => {
   beforeEach(() => jest.clearAllMocks());
@@ -817,7 +804,6 @@ describe('VdoPlayerControls — seekbar seek math', () => {
   });
 });
 
-// ─── VdoPlayerControls — error event prop forwarding ─────────────────────────
 
 describe('VdoPlayerControls — error event prop forwarding', () => {
   beforeEach(() => jest.clearAllMocks());
@@ -882,7 +868,6 @@ describe('VdoPlayerControls — error event prop forwarding', () => {
   });
 });
 
-// ─── VdoPlayerControls — embedInfo prop change ───────────────────────────────
 
 describe('VdoPlayerControls — embedInfo prop change', () => {
   beforeEach(() => jest.clearAllMocks());
@@ -904,7 +889,6 @@ describe('VdoPlayerControls — embedInfo prop change', () => {
   });
 });
 
-// ─── VdoPlayerControls — playback speed control ──────────────────────────────
 
 describe('VdoPlayerControls — playback speed control', () => {
   beforeEach(() => jest.clearAllMocks());
@@ -944,7 +928,6 @@ describe('VdoPlayerControls — playback speed control', () => {
   });
 });
 
-// ─── VdoPlayerView — full event prop contract ────────────────────────────────
 //
 // Mount VdoPlayerView directly with every callback the library publishes and
 // confirm each is wired through to the consumer when the underlying native
@@ -1031,7 +1014,6 @@ describe('VdoPlayerView — full event prop contract', () => {
   });
 });
 
-// ─── VdoPlayerView — full ref method contract ────────────────────────────────
 //
 // Mount VdoPlayerView directly, capture the imperative ref, and invoke every
 // command and getter the library publishes. This is the library's ref-method

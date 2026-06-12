@@ -4,12 +4,6 @@ import VdoPlayerControls from './VdoPlayerControls';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import { RootStackParamList } from './type';
 
-
-type State = {
-  isFullscreen: boolean;
-  isInPictureInPictureMode: boolean;
-};
-
 export default function JSControlsScreen(props: NativeStackScreenProps<RootStackParamList, 'JSControls'>) {
 
   const [isFullscreen, setIsFullscreen] = useState(false);

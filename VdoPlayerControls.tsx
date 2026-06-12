@@ -144,11 +144,11 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
   const _onPlayButtonTouch = () => {
     if (ended) {
       _player.current?.seek(0);
-      setPlayWhenReady(p => p = true)
-      setPosition(po => po = 0)
-      setSeekbarPosition(spo => spo = 0)
+      setPlayWhenReady(true);
+      setPosition(0);
+      setSeekbarPosition(0);
     } else {
-      setPlayWhenReady(p => p = !playWhenReady)
+      setPlayWhenReady(p => !p);
     }
   };
 

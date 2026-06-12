@@ -1,14 +1,10 @@
 /**
- * Tests for vdocipher-rn-bridge integration
- * Covers: VdoDownload API, DownloadsScreen lifecycle, DownloadListItem UI states
- * @format
+ * Integration tests for the vdocipher-rn-bridge download flow: DownloadsScreen
+ * (VdoDownload wiring + lifecycle) and DownloadListItem (UI states + actions).
  */
-
 import 'react-native';
 import React from 'react';
-import renderer, { act } from 'react-test-renderer';
-
-// ─── Mocks ────────────────────────────────────────────────────────────────────
+import renderer, {act} from 'react-test-renderer';
 
 jest.mock('vdocipher-rn-bridge', () => ({
   VdoDownload: {
@@ -21,17 +17,20 @@ jest.mock('vdocipher-rn-bridge', () => ({
     isExpired: jest.fn(),
   },
   startVideoScreen: jest.fn(),
-  VdoPlayerView: 'VdoPlayerView',
 }));
 
-// ─── Imports (after mocks) ────────────────────────────────────────────────────
+import {VdoDownload, startVideoScreen} from 'vdocipher-rn-bridge';
+import DownloadsScreen from '../DownloadsScreen';
+import DownloadListItem from '../DownloadListItem';
+import HomeScreen from '../HomeScreen';
 
-import { VdoDownload, startVideoScreen } from 'vdocipher-rn-bridge';
+const mockVdoDownload = VdoDownload as any;
+const mockStartVideoScreen = startVideoScreen as jest.Mock;
 
-// ─── Fixture helpers ──────────────────────────────────────────────────────────
+const SAMPLE_MEDIA_ID = 'c81d4678d1b54b80a26b0470f1328e25';
 
-const createDownloadStatus = (overrides: Record<string, any> = {}) => ({
-  mediaInfo: { mediaId: 'test-media-id', title: 'Test Video' },
+const createStatus = (overrides: Record<string, any> = {}) => ({
+  mediaInfo: {mediaId: SAMPLE_MEDIA_ID, title: 'Test Video'},
   status: 'completed',
   downloadPercent: 100,
   reason: '',
@@ -39,253 +38,250 @@ const createDownloadStatus = (overrides: Record<string, any> = {}) => ({
   ...overrides,
 });
 
-// ─── VdoDownload.query() ──────────────────────────────────────────────────────
+const screenProps = () =>
+  ({navigation: {navigate: jest.fn()}, route: {params: {}}} as any);
 
-describe('VdoDownload.query()', () => {
-  beforeEach(() => jest.clearAllMocks());
+// react-test-renderer surfaces testID on both the composite and its host node;
+// the composite is the one carrying our onPress handler.
+const pressables = (root: any, id: string) =>
+  root.findAll(
+    (n: any) => n.props && n.props.testID === id && typeof n.props.onPress === 'function',
+  );
+const pressable = (root: any, id: string) => pressables(root, id)[0];
+const allText = (root: any) =>
+  JSON.stringify(root.findAllByType('Text' as any).map((t: any) => t.props.children));
 
-  it('resolves with an array of DownloadStatus objects', async () => {
-    const statuses = [createDownloadStatus()];
-    (VdoDownload.query as jest.Mock).mockResolvedValueOnce(statuses);
+const flush = () => act(async () => {await new Promise(setImmediate);});
 
-    const result = await VdoDownload.query();
-
-    expect(result).toEqual(statuses);
+const renderScreen = async (props = screenProps()) => {
+  let tree!: any;
+  await act(async () => {
+    tree = renderer.create(<DownloadsScreen {...props} />);
   });
+  return {tree, props};
+};
 
-  it('resolves with an empty array when no downloads exist', async () => {
-    (VdoDownload.query as jest.Mock).mockResolvedValueOnce([]);
-
-    const result = await VdoDownload.query();
-
-    expect(result).toEqual([]);
-  });
-
-  it('rejects with an error descriptor on failure', async () => {
-    const error = { exception: 'StorageError', msg: 'Failed to read storage' };
-    (VdoDownload.query as jest.Mock).mockRejectedValueOnce(error);
-
-    await expect(VdoDownload.query()).rejects.toEqual(error);
-  });
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockVdoDownload.query.mockResolvedValue([]);
+  mockVdoDownload.addEventListener.mockReturnValue(jest.fn());
 });
 
-// ─── VdoDownload.addEventListener() ──────────────────────────────────────────
-
-describe('VdoDownload.addEventListener()', () => {
-  beforeEach(() => jest.clearAllMocks());
-
-  it('returns an unsubscribe function', () => {
-    const unsubscribe = jest.fn();
-    (VdoDownload.addEventListener as jest.Mock).mockReturnValueOnce(unsubscribe);
-
-    const result = VdoDownload.addEventListener('onQueued', jest.fn());
-
-    expect(result).toBe(unsubscribe);
+describe('DownloadsScreen — lifecycle & bridge wiring', () => {
+  it('queries existing downloads on mount', async () => {
+    await renderScreen();
+    expect(mockVdoDownload.query).toHaveBeenCalledTimes(1);
   });
 
-  it('is callable for all supported event types', () => {
-    const eventTypes = ['onQueued', 'onChanged', 'onCompleted', 'onFailed', 'onDeleted'];
-    (VdoDownload.addEventListener as jest.Mock).mockReturnValue(jest.fn());
-
-    eventTypes.forEach(event => VdoDownload.addEventListener(event as any, jest.fn()));
-
-    expect(VdoDownload.addEventListener).toHaveBeenCalledTimes(5);
-    eventTypes.forEach(event =>
-      expect(VdoDownload.addEventListener).toHaveBeenCalledWith(event, expect.any(Function)),
+  it('registers all five download event listeners on mount', async () => {
+    await renderScreen();
+    const events = mockVdoDownload.addEventListener.mock.calls.map(c => c[0]);
+    expect(events).toEqual(
+      expect.arrayContaining(['onQueued', 'onChanged', 'onCompleted', 'onFailed', 'onDeleted']),
     );
   });
 
-  it('calling the returned function unsubscribes the listener', () => {
+  it('unregisters every listener on unmount', async () => {
     const unsubscribe = jest.fn();
-    (VdoDownload.addEventListener as jest.Mock).mockReturnValueOnce(unsubscribe);
+    mockVdoDownload.addEventListener.mockReturnValue(unsubscribe);
+    const {tree} = await renderScreen();
+    await act(async () => {tree.unmount();});
+    expect(unsubscribe).toHaveBeenCalledTimes(5);
+  });
 
-    const removeListener = VdoDownload.addEventListener('onCompleted', jest.fn());
-    removeListener();
+  it('renders one row per sample video', async () => {
+    const {tree} = await renderScreen();
+    expect(pressables(tree.root, 'download-start').length).toBe(2);
+  });
 
-    expect(unsubscribe).toHaveBeenCalledTimes(1);
+  it('re-queries the list when a download completes', async () => {
+    await renderScreen();
+    const onCompleted = mockVdoDownload.addEventListener.mock.calls.find(
+      c => c[0] === 'onCompleted',
+    )![1];
+    mockVdoDownload.query.mockClear();
+    await act(async () => {onCompleted(SAMPLE_MEDIA_ID, createStatus());});
+    expect(mockVdoDownload.query).toHaveBeenCalledTimes(1);
   });
 });
 
-// ─── VdoDownload.getDownloadOptions() ────────────────────────────────────────
-
-describe('VdoDownload.getDownloadOptions()', () => {
-  beforeEach(() => jest.clearAllMocks());
-
-  it('resolves with downloadOptions and an enqueue function', async () => {
-    const mockEnqueue = jest.fn().mockResolvedValue(undefined);
-    const mockResponse = {
-      downloadOptions: {
-        availableTracks: [
-          { type: 'audio', id: 0, language: 'en', bitrate: 64000 },
-          { type: 'video', id: 1, width: 1280, height: 720, bitrate: 1500000 },
-        ],
-      },
-      enqueue: mockEnqueue,
-    };
-    (VdoDownload.getDownloadOptions as jest.Mock).mockResolvedValueOnce(mockResponse);
-
-    const result = await VdoDownload.getDownloadOptions({ otp: 'test-otp', playbackInfo: 'test-info' });
-
-    expect(result).toEqual(mockResponse);
-    expect(VdoDownload.getDownloadOptions).toHaveBeenCalledWith({
-      otp: 'test-otp',
-      playbackInfo: 'test-info',
+describe('DownloadsScreen — actions call the bridge', () => {
+  it('enqueues audio + video tracks when the download button is pressed', async () => {
+    const enqueue = jest.fn().mockResolvedValue(undefined);
+    mockVdoDownload.getDownloadOptions.mockResolvedValue({
+      downloadOptions: {availableTracks: [{type: 'audio'}, {type: 'video'}]},
+      enqueue,
     });
+    const {tree} = await renderScreen();
+
+    await act(async () => {pressable(tree.root, 'download-start').props.onPress();});
+    await flush();
+
+    expect(mockVdoDownload.getDownloadOptions).toHaveBeenCalledTimes(1);
+    expect(enqueue).toHaveBeenCalledWith({selections: [0, 1]});
   });
 
-  it('rejects with an errorCode, errorMsg, and httpStatusCode on failure', async () => {
-    const error = { errorCode: 401, errorMsg: 'Unauthorized', httpStatusCode: 401 };
-    (VdoDownload.getDownloadOptions as jest.Mock).mockRejectedValueOnce(error);
+  it('stops a download via the Stop button', async () => {
+    mockVdoDownload.query.mockResolvedValue([createStatus({status: 'downloading'})]);
+    mockVdoDownload.stop.mockResolvedValue(undefined);
+    const {tree} = await renderScreen();
 
-    await expect(
-      VdoDownload.getDownloadOptions({ otp: 'bad-otp', playbackInfo: 'bad-info' }),
-    ).rejects.toEqual(error);
+    await act(async () => {pressable(tree.root, 'download-stop').props.onPress();});
+
+    expect(mockVdoDownload.stop).toHaveBeenCalledWith([SAMPLE_MEDIA_ID]);
   });
 
-  it('calling enqueue() with track selections starts the download', async () => {
-    const mockEnqueue = jest.fn().mockResolvedValue(undefined);
-    (VdoDownload.getDownloadOptions as jest.Mock).mockResolvedValueOnce({
-      downloadOptions: { availableTracks: [{ type: 'audio' }, { type: 'video' }] },
-      enqueue: mockEnqueue,
-    });
+  it('resumes a download via the Resume button', async () => {
+    mockVdoDownload.query.mockResolvedValue([createStatus({status: 'downloading'})]);
+    mockVdoDownload.resume.mockResolvedValue(undefined);
+    const {tree} = await renderScreen();
 
-    const { enqueue } = await VdoDownload.getDownloadOptions({ otp: 'otp', playbackInfo: 'pi' });
-    await enqueue({ selections: [0, 1] });
+    await act(async () => {pressable(tree.root, 'download-resume').props.onPress();});
 
-    expect(mockEnqueue).toHaveBeenCalledWith({ selections: [0, 1] });
-  });
-});
-
-// ─── VdoDownload.stop() ───────────────────────────────────────────────────────
-
-describe('VdoDownload.stop()', () => {
-  beforeEach(() => jest.clearAllMocks());
-
-  it('stops the download for the given mediaId array', async () => {
-    (VdoDownload.stop as jest.Mock).mockResolvedValueOnce(undefined);
-
-    await VdoDownload.stop(['media-id-1']);
-
-    expect(VdoDownload.stop).toHaveBeenCalledWith(['media-id-1']);
+    expect(mockVdoDownload.resume).toHaveBeenCalledWith([SAMPLE_MEDIA_ID]);
   });
 
-  it('can stop multiple downloads in a single call', async () => {
-    (VdoDownload.stop as jest.Mock).mockResolvedValueOnce(undefined);
+  it('removes a download via the Delete button', async () => {
+    mockVdoDownload.query.mockResolvedValue([createStatus()]);
+    mockVdoDownload.remove.mockResolvedValue(undefined);
+    const {tree} = await renderScreen();
 
-    await VdoDownload.stop(['id-1', 'id-2']);
+    await act(async () => {pressable(tree.root, 'download-delete').props.onPress();});
 
-    expect(VdoDownload.stop).toHaveBeenCalledWith(['id-1', 'id-2']);
+    expect(mockVdoDownload.remove).toHaveBeenCalledWith([SAMPLE_MEDIA_ID]);
   });
 
-  it('rejects on error', async () => {
-    const error = { exception: 'DownloadError', msg: 'Cannot stop' };
-    (VdoDownload.stop as jest.Mock).mockRejectedValueOnce(error);
+  it('navigates to the offline player for a completed download', async () => {
+    mockVdoDownload.query.mockResolvedValue([createStatus()]);
+    const {tree, props} = await renderScreen();
 
-    await expect(VdoDownload.stop(['id-1'])).rejects.toEqual(error);
-  });
-});
+    await act(async () => {pressable(tree.root, 'download-play').props.onPress();});
 
-// ─── VdoDownload.resume() ────────────────────────────────────────────────────
-
-describe('VdoDownload.resume()', () => {
-  beforeEach(() => jest.clearAllMocks());
-
-  it('resumes the download for the given mediaId array', async () => {
-    (VdoDownload.resume as jest.Mock).mockResolvedValueOnce(undefined);
-
-    await VdoDownload.resume(['media-id-1']);
-
-    expect(VdoDownload.resume).toHaveBeenCalledWith(['media-id-1']);
-  });
-
-  it('rejects on error', async () => {
-    const error = { exception: 'DownloadError', msg: 'Cannot resume' };
-    (VdoDownload.resume as jest.Mock).mockRejectedValueOnce(error);
-
-    await expect(VdoDownload.resume(['id-1'])).rejects.toEqual(error);
+    expect(props.navigation.navigate).toHaveBeenCalledWith(
+      'NativeControls',
+      expect.objectContaining({
+        embedInfo: expect.objectContaining({offline: true, mediaId: SAMPLE_MEDIA_ID}),
+      }),
+    );
   });
 });
 
-// ─── VdoDownload.remove() ────────────────────────────────────────────────────
-
-describe('VdoDownload.remove()', () => {
-  beforeEach(() => jest.clearAllMocks());
-
-  it('removes the download for the given mediaId array', async () => {
-    (VdoDownload.remove as jest.Mock).mockResolvedValueOnce(undefined);
-
-    await VdoDownload.remove(['media-id-1']);
-
-    expect(VdoDownload.remove).toHaveBeenCalledWith(['media-id-1']);
+describe('DownloadListItem — UI states', () => {
+  const props = (over: Record<string, any> = {}) => ({
+    title: 'Sample 1',
+    onDownload: jest.fn(),
+    onPlay: jest.fn(),
+    onStop: jest.fn(),
+    onResume: jest.fn(),
+    onInfo: jest.fn(),
+    onDelete: jest.fn(),
+    ...over,
   });
 
-  it('rejects on error', async () => {
-    const error = { exception: 'DownloadError', msg: 'Cannot remove' };
-    (VdoDownload.remove as jest.Mock).mockRejectedValueOnce(error);
+  const render = (p: any) => {
+    let tree!: any;
+    act(() => {tree = renderer.create(<DownloadListItem {...p} />);});
+    return tree;
+  };
 
-    await expect(VdoDownload.remove(['id-1'])).rejects.toEqual(error);
+  it('prompts to download when there is no status', () => {
+    const tree = render(props({downloadStatus: undefined}));
+    expect(allText(tree.root)).toContain('Tap the download icon');
+  });
+
+  it('disables Play until the download is completed', () => {
+    const tree = render(props({downloadStatus: createStatus({status: 'downloading'})}));
+    expect(pressable(tree.root, 'download-play').props.disabled).toBe(true);
+  });
+
+  it('enables Play once completed', () => {
+    const tree = render(props({downloadStatus: createStatus({status: 'completed'})}));
+    expect(pressable(tree.root, 'download-play').props.disabled).toBe(false);
+  });
+
+  it('disables Stop/Resume once completed', () => {
+    const tree = render(props({downloadStatus: createStatus({status: 'completed'})}));
+    expect(pressable(tree.root, 'download-stop').props.disabled).toBe(true);
+    expect(pressable(tree.root, 'download-resume').props.disabled).toBe(true);
+  });
+
+  it('disables Delete when there is no status', () => {
+    const tree = render(props({downloadStatus: undefined}));
+    expect(pressable(tree.root, 'download-delete').props.disabled).toBe(true);
+  });
+
+  it('fires the matching callback for each action button', () => {
+    const p = props({downloadStatus: createStatus({status: 'downloading'})});
+    const tree = render(p);
+
+    pressable(tree.root, 'download-start').props.onPress();
+    pressable(tree.root, 'download-stop').props.onPress();
+    pressable(tree.root, 'download-resume').props.onPress();
+    pressable(tree.root, 'download-delete').props.onPress();
+
+    expect(p.onDownload).toHaveBeenCalledTimes(1);
+    expect(p.onStop).toHaveBeenCalledTimes(1);
+    expect(p.onResume).toHaveBeenCalledTimes(1);
+    expect(p.onDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the download percentage while downloading', () => {
+    const tree = render(props({downloadStatus: createStatus({status: 'downloading', downloadPercent: 42})}));
+    expect(allText(tree.root)).toContain('DOWNLOADING 42%');
+  });
+
+  it('shows the failure reason when a download fails', () => {
+    const tree = render(
+      props({downloadStatus: createStatus({status: 'failed', reason: 'NETWORK', reasonDescription: 'offline'})}),
+    );
+    expect(allText(tree.root)).toContain('ERROR NETWORK: OFFLINE');
   });
 });
 
-// ─── VdoDownload.isExpired() ─────────────────────────────────────────────────
-
-describe('VdoDownload.isExpired()', () => {
-  beforeEach(() => jest.clearAllMocks());
-
-  it('resolves with false for a non-expired download', async () => {
-    (VdoDownload.isExpired as jest.Mock).mockResolvedValueOnce(false);
-
-    const result = await VdoDownload.isExpired('media-id-1');
-
-    expect(result).toBe(false);
-    expect(VdoDownload.isExpired).toHaveBeenCalledWith('media-id-1');
+describe('HomeScreen — playback entry points', () => {
+  beforeEach(() => {
+    (global as any).fetch = jest.fn(() =>
+      Promise.resolve({json: () => Promise.resolve({otp: 'fetched-otp', playbackInfo: 'fetched-pi'})}),
+    );
   });
 
-  it('resolves with true for an expired download', async () => {
-    (VdoDownload.isExpired as jest.Mock).mockResolvedValueOnce(true);
+  const buttonByTitle = (root: any, title: string) =>
+    root.findAll((n: any) => n.props && n.props.title === title)[0];
 
-    const result = await VdoDownload.isExpired('expired-id');
+  const renderHome = async () => {
+    const props = screenProps();
+    let tree!: any;
+    await act(async () => {tree = renderer.create(<HomeScreen {...props} />);});
+    await flush();
+    return {tree, props};
+  };
 
-    expect(result).toBe(true);
+  it('launches the native fullscreen player via startVideoScreen(embedInfo, true)', async () => {
+    const {tree} = await renderHome();
+    act(() => {buttonByTitle(tree.root, 'Start video in native fullscreen').props.onPress();});
+    expect(mockStartVideoScreen).toHaveBeenCalledWith(
+      expect.objectContaining({
+        embedInfo: expect.objectContaining({otp: expect.any(String), playbackInfo: expect.any(String)}),
+      }),
+      true,
+    );
   });
 
-  it('rejects on error', async () => {
-    const error = { exception: 'MediaError', msg: 'Cannot check expiry' };
-    (VdoDownload.isExpired as jest.Mock).mockRejectedValueOnce(error);
-
-    await expect(VdoDownload.isExpired('id-1')).rejects.toEqual(error);
-  });
-});
-
-// ─── startVideoScreen ─────────────────────────────────────────────────────────
-
-describe('startVideoScreen', () => {
-  beforeEach(() => jest.clearAllMocks());
-
-  it('is called with the correct embedInfo and autostart flag', () => {
-    const embedInfo = {
-      otp: '20160313versUSE3233GHgXyKF5phSzyT4dRhHRRf51zMA7o5nMW4ggLhL2daCWh',
-      playbackInfo: 'eyJ2aWRlb0lkIjoiZjIzNjQ0OTk2NThiNDNkMDljZDBhOWJlZWY1ODhiMDIifQ==',
-    };
-
-    startVideoScreen({ embedInfo }, true);
-
-    expect(startVideoScreen).toHaveBeenCalledWith({ embedInfo }, true);
+  it('opens embedded-native-controls playback carrying the embedInfo', async () => {
+    const {tree, props} = await renderHome();
+    act(() => {buttonByTitle(tree.root, 'Start video with embedded native controls').props.onPress();});
+    expect(props.navigation.navigate).toHaveBeenCalledWith(
+      'NativeControls',
+      expect.objectContaining({embedInfo: expect.any(Object)}),
+    );
   });
 
-  it('forwards autostart=false correctly', () => {
-    const embedInfo = { otp: 'otp', playbackInfo: 'pi' };
-
-    startVideoScreen({ embedInfo }, false);
-
-    expect(startVideoScreen).toHaveBeenCalledWith({ embedInfo }, false);
-  });
-
-  it('is only called once per invocation', () => {
-    const embedInfo = { otp: 'otp', playbackInfo: 'pi' };
-
-    startVideoScreen({ embedInfo }, true);
-
-    expect(startVideoScreen).toHaveBeenCalledTimes(1);
+  it('opens JS-controls playback carrying the embedInfo', async () => {
+    const {tree, props} = await renderHome();
+    act(() => {buttonByTitle(tree.root, 'Start video with JS controls').props.onPress();});
+    expect(props.navigation.navigate).toHaveBeenCalledWith(
+      'JSControls',
+      expect.objectContaining({embedInfo: expect.any(Object)}),
+    );
   });
 });
