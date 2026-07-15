@@ -181,6 +181,14 @@ public class PlaybackJourneyTest {
             }
         }
 
+        // The quality picker modal stays open when the already-active track
+        // is re-selected (handleRadioChange early-returns without toggling
+        // modalVisible). Close it so the speed control below isn't left covered.
+        if (device.findObject(By.desc("player-speed")) == null) {
+            device.pressBack();
+            sleepQuietly(800);
+        }
+
         // ── Playback speed cycle (drives setPlaybackSpeed for every speed) ─
         // The sample's speed button cycles 1.0 → 1.25 → 1.5 → 1.75 → 2.0 →
         // 0.5 → 0.75. Tap 7 times to exercise the full set.
@@ -194,18 +202,21 @@ public class PlaybackJourneyTest {
         }
 
         // ── Return home — confirms the app survived the journey ─────────────
-        // A quality picker modal CAN remain open: if the player was already in
-        // adaptive mode when the test tapped "Auto", handleRadioChange returns
-        // early without toggling modalVisible. First back closes the modal,
-        // second back exits the screen. Try once, then retry if not yet home.
-        device.pressBack();
-        boolean onHome = device.wait(
-                Until.hasObject(By.text(HOME_WELCOME)), 5_000);
-        if (!onHome) {
+        // The end state can carry an extra layer (a picker modal left open when
+        // the already-active track was re-selected) on top of the player
+        // screen. Press Back until the HomeScreen welcome text appears, but
+        // check for Home BEFORE each Back so we never over-press and fall
+        // through to the device launcher once we're already home.
+        boolean onHome = false;
+        for (int attempt = 0; attempt < 3 && !onHome; attempt++) {
+            onHome = device.wait(Until.hasObject(By.text(HOME_WELCOME)), 3_000);
+            if (onHome) {
+                break;
+            }
             device.pressBack();
-            onHome = device.wait(
-                    Until.hasObject(By.text(HOME_WELCOME)), UI_WAIT_TIMEOUT_MS);
         }
+        onHome = onHome
+                || device.wait(Until.hasObject(By.text(HOME_WELCOME)), UI_WAIT_TIMEOUT_MS);
         assertTrue("App did not return to HomeScreen — likely a crash mid-journey",
                 onHome);
     }
