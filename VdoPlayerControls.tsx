@@ -5,7 +5,7 @@ import {VdoPlayerView} from 'vdocipher-rn-bridge';
 import MatIcon from 'react-native-vector-icons/MaterialIcons';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { ErrorDescription } from './type';
-import { Track, MediaInfo, CaptionLanguage, VideoQuality, VdoPropTypes, PlaybackProperty } from 'vdocipher-rn-bridge/type';
+import { Track, MediaInfo, CaptionLanguage, VideoQuality, VdoPropTypes } from 'vdocipher-rn-bridge/type';
 // @ts-ignore
 import RadioButtonRN from 'radio-buttons-react-native';
 // @ts-ignore
@@ -22,7 +22,6 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
 
   const _player = useRef<VdoPlayerView>(null);
   let _seekbarWidth!: number;
-  let propInterval: NodeJS.Timeout | string | number | undefined;
 
   const [init, setInit] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -57,9 +56,17 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
 
     return () => {
       console.log('VdoPlayerControls will unmount');
-      // clearInterval(propInterval);
     }
   }, [])
+
+  useEffect(() => {
+    if (!_player.current) return;
+    if (playWhenReady) {
+      _player.current.play();
+    } else {
+      _player.current.pause();
+    }
+  }, [playWhenReady]);
 
   const _onInitSuccess = () => {
     setInit(true)
@@ -77,15 +84,6 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
   const _onLoaded = (metaData: {mediaInfo: MediaInfo}) => {
     setLoaded(true)
     setDuration( metaData.mediaInfo.duration / 1000)
-    // propInterval = setInterval(
-    //   () => {
-    //     _player.getPlaybackPropertiesV2().then((playbackProperties: PlaybackProperty) => {
-    //       console.log("tp:", playbackProperties.totalPlayed);
-    //       console.log("tc: ", playbackProperties.totalCovered);
-    //     }
-    //   )},
-    //   10000,
-    // );
 
     _isCaptionLanguageAvailable();
     _isVideoTrackSelectionAvailable();
@@ -117,11 +115,11 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
   const _onPlayButtonTouch = () => {
     if (ended) {
       _player.current?.seek(0);
-      setPlayWhenReady(p => p = true)
-      setPosition(po => po = 0)
-      setSeekbarPosition(spo => spo = 0)
+      setPlayWhenReady(true);
+      setPosition(0);
+      setSeekbarPosition(0);
     } else {
-      setPlayWhenReady(p => p = !playWhenReady)
+      setPlayWhenReady(p => !p);
     }
   };
 
@@ -390,7 +388,7 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
         ref={_player}
         style={styles.player.video}
         {...props}
-        playWhenReady={playWhenReady}
+        autoPlay={false}
         showNativeControls={false}
         onInitializationSuccess={_onInitSuccess}
         onInitializationFailure={_onInitFailure}
