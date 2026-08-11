@@ -1,0 +1,826 @@
+diff --git a/node_modules/vdocipher-rn-bridge/VdoPlayerView.tsx b/node_modules/vdocipher-rn-bridge/VdoPlayerView.tsx
+index 5e18da4..37427e5 100644
+--- a/node_modules/vdocipher-rn-bridge/VdoPlayerView.tsx
++++ b/node_modules/vdocipher-rn-bridge/VdoPlayerView.tsx
+@@ -3,9 +3,9 @@
+  */
+ import React, { Component, Fragment } from 'react';
+ import { InferProps } from 'prop-types';
+-import { BackHandler, NativeModules, StyleSheet, Dimensions, NativeEventEmitter, Platform} from 'react-native';
+-import  VdoPlayerSupportView  from './VdoPlayerSupportView';
+-import  VdoPlayerUIView  from './VdoPlayerUIView';
++import { BackHandler, NativeModules, StyleSheet, Dimensions, NativeEventEmitter, Platform } from 'react-native';
++import VdoPlayerSupportView from './VdoPlayerSupportView';
++import VdoPlayerUIView from './VdoPlayerUIView';
+ import * as VdoType from './type';
+ import { getNavigationContext } from './navigationHelper';
+ let NavigationContext: React.Context<any> | null = getNavigationContext();
+@@ -21,33 +21,34 @@ type MyState = {
+ };
+ 
+ class VdoPlayerView extends Component<MyProps, MyState> {
+-   _propRef: number;
+-   _vdoPlayerView: any;
+-   static propTypes: typeof VdoViewPropTypes;
+-   eventEmitter: NativeEventEmitter;
+-   focusListener: (() => void) | undefined;
+-   blurListener: (() => void) | undefined;   
+-
+-   constructor(props: MyProps) {
+-     super(props);
+-     this.state = {
+-       fullscreen: false,
+-       isInPictureInPictureMode: false
+-     }
+-     this.handleBackButtonClick = this.handleBackButtonClick.bind(this);
+-     this._propRef = 1;
+-     this.eventEmitter = new NativeEventEmitter(VdoEventEmitter); 
+-   }
+-
+-   componentDidMount() {
+-     BackHandler.addEventListener('hardwareBackPress', this.handleBackButtonClick);
+-     if (this.props.style?.resizeMode) {
++  backHandlerSubscription: any;
++  _propRef: number;
++  _vdoPlayerView: any;
++  static propTypes: typeof VdoViewPropTypes;
++  eventEmitter: NativeEventEmitter;
++  focusListener: (() => void) | undefined;
++  blurListener: (() => void) | undefined;
++
++  constructor(props: MyProps) {
++    super(props);
++    this.state = {
++      fullscreen: false,
++      isInPictureInPictureMode: false
++    }
++    this.handleBackButtonClick = this.handleBackButtonClick.bind(this);
++    this._propRef = 1;
++    this.eventEmitter = new NativeEventEmitter(VdoEventEmitter);
++  }
++
++  componentDidMount() {
++    this.backHandlerSubscription = BackHandler.addEventListener('hardwareBackPress', this.handleBackButtonClick);
++    if (this.props.style?.resizeMode) {
+       this._vdoPlayerView.setResizeMode(this.props.style.resizeMode);
+-     }
++    }
+ 
+-     this.eventEmitter.addListener('onInitSuccess', this._onInitSuccess)
++    this.eventEmitter.addListener('onInitSuccess', this._onInitSuccess)
+ 
+-     this.eventEmitter.addListener('onVdoLoading', (data) => {
++    this.eventEmitter.addListener('onVdoLoading', (data) => {
+       this._onLoading(this.props.embedInfo, data);
+     })
+ 
+@@ -56,7 +57,7 @@ class VdoPlayerView extends Component<MyProps, MyState> {
+     })
+ 
+     this.eventEmitter.addListener('onVdoProgress', this._onProgress)
+-     this.eventEmitter.addListener('onVdoLoaded', (data) => {
++    this.eventEmitter.addListener('onVdoLoaded', (data) => {
+       this._onLoaded(this.props.embedInfo, data);
+     })
+ 
+@@ -83,326 +84,335 @@ class VdoPlayerView extends Component<MyProps, MyState> {
+     if (Platform.OS == "ios" && !(this.props.showNativeControls === false)) {
+       this.addFocusListeners();
+     }
+-   }
+-
+-   componentWillUnmount() {
+-     BackHandler.removeEventListener('hardwareBackPress', this.handleBackButtonClick);
+-     this.eventEmitter.removeAllListeners('onInitSuccess');
+-     this.eventEmitter.removeAllListeners('onVdoLoading');
+-     this.eventEmitter.removeAllListeners('onVdoLoadError');
+-     this.eventEmitter.removeAllListeners('onVdoLoaded');
+-     this.eventEmitter.removeAllListeners('onVdoProgress');
+-     this.eventEmitter.removeAllListeners('onVdoTracksChanged');
+-     this.eventEmitter.removeAllListeners('onVdoMediaEnded');
+-     this.eventEmitter.removeAllListeners('onVdoPlayerStateChanged');
+-     this.eventEmitter.removeAllListeners('onVdoEnterFullscreen');
+-     this.eventEmitter.removeAllListeners('onVdoExitFullscreen');
+-     this.eventEmitter.removeAllListeners('onVdoPlaybackSpeedChanged');
+-
+-     if (Platform.OS == "ios" && !(this.props.showNativeControls === false)) {
++  }
++
++  componentWillUnmount() {
++    //  BackHandler.removeEventListener('hardwareBackPress', this.handleBackButtonClick);
++    this.backHandlerSubscription?.remove();
++    this.eventEmitter.removeAllListeners('onInitSuccess');
++    this.eventEmitter.removeAllListeners('onVdoLoading');
++    this.eventEmitter.removeAllListeners('onVdoLoadError');
++    this.eventEmitter.removeAllListeners('onVdoLoaded');
++    this.eventEmitter.removeAllListeners('onVdoProgress');
++    this.eventEmitter.removeAllListeners('onVdoTracksChanged');
++    this.eventEmitter.removeAllListeners('onVdoMediaEnded');
++    this.eventEmitter.removeAllListeners('onVdoPlayerStateChanged');
++    this.eventEmitter.removeAllListeners('onVdoEnterFullscreen');
++    this.eventEmitter.removeAllListeners('onVdoExitFullscreen');
++    this.eventEmitter.removeAllListeners('onVdoPlaybackSpeedChanged');
++
++    if (Platform.OS == "ios" && !(this.props.showNativeControls === false)) {
+       this.removeFocusListeners();
+-     }
+-   }
++    }
++  }
+ 
+-   addFocusListeners() {      
++  addFocusListeners() {
+ 
+     if (NavigationContext) {
+       const navigation: any = this.context;
+       this.focusListener = navigation.addListener('focus', this.onScreenFocused);
+       this.blurListener = navigation.addListener('blur', this.onScreenBlurred);
+     }
+-   }
++  }
+ 
+-   removeFocusListeners() {
++  removeFocusListeners() {
+     this.focusListener && this.focusListener();
+     this.blurListener && this.blurListener();
+-   }
++  }
+ 
+-   onScreenFocused = () => {
++  onScreenFocused = () => {
+     if (this._vdoPlayerView) {
+       this._vdoPlayerView.setScreenFocused();
+     }
+-   };
++  };
+ 
+-   onScreenBlurred = () => {
++  onScreenBlurred = () => {
+     if (this._vdoPlayerView) {
+       this._vdoPlayerView.setScreenBlurred();
+     }
+-   };
+-
+-   handleBackButtonClick() {
+-      if (!this.state.isInPictureInPictureMode && this.state.fullscreen && !(this.props.showNativeControls === false)) {
+-        this._vdoPlayerView.handleBackButtonClick();
+-        return true;
+-      }
+-   }
+-
+-   seek = (seekTargetMs: number) => {
+-      if (this._vdoPlayerView) {
+-        this._vdoPlayerView.seek(seekTargetMs);
+-      }
+-    }
+-
+-   /**
+-   * @deprecated 
+-   * Use {@link enterFullscreenV2} instead.
+-   */
+-   enterFullscreen = () => {
+-      if (Platform.OS == "ios" ) {
+-        console.warn("Method not supported for iOS");
+-        return;
+-      }
+-      if (this.props.showNativeControls === false) {
+-        console.warn('enterFullscreen method is deprecated. We advise handling fullscreen changes manually or utilizing our player with native controls which handles fullscreen automatically.');
+-      } else {
+-        console.warn('enterFullscreen method is deprecated. Please use enterFullscreenV2 instead.');
+-      }
+-      if (this._vdoPlayerView) {
+-        this._vdoPlayerView.enterFullscreen();
+-      }
+-    }
+-
+-   /**
+-   * Works only with player with native controls
+-   */
+-   enterFullscreenV2 = () => {
+-      if (this._vdoPlayerView && !(this.props.showNativeControls === false)) {
+-        this._vdoPlayerView.enterFullscreenV2();
+-      }
+-    }
+-
+-   /**
+-   * @deprecated 
+-   * Use {@link exitFullscreenV2} instead.
+-   */
+-   exitFullscreen = () => {
+-      if (Platform.OS == "ios" ) {
+-        console.warn("Method not supported for iOS");
+-        return;
+-      }
+-      if (this.props.showNativeControls === false) {
+-        console.warn('exitFullscreen method is deprecated. We advise handling fullscreen changes manually or utilizing our player with native controls which handles fullscreen automatically.');
+-      } else {
+-        console.warn('exitFullscreen method is deprecated. Please use exitFullscreenV2 instead.');
+-      }
+-      if (this._vdoPlayerView) {
+-        this._vdoPlayerView.exitFullscreen();
+-      }
+-    }
+-
+-    /**
+-    * Works only with player with native controls
+-    */
+-    exitFullscreenV2 = () => {
+-      if (this._vdoPlayerView && !(this.props.showNativeControls === false)) {
+-       this._vdoPlayerView.exitFullscreenV2();
+-      }
+-    }
+-
+-   getPlaybackProperties = () => {
+-      if (Platform.OS == "ios" ) {
+-        console.warn("Method not supported for iOS");
+-        return;
+-      }
+-      if (this._vdoPlayerView) {
+-        this._vdoPlayerView.getPlaybackProperties();
+-      }
+-    }
+-
+-   isAdaptive = async() => {
+-    return new Promise(async(resolve) => { await  TrackSelection.isAdaptive((isAdaptive: boolean) => {
++  };
++
++  handleBackButtonClick() {
++    if (!this.state.isInPictureInPictureMode && this.state.fullscreen && !(this.props.showNativeControls === false)) {
++      this._vdoPlayerView.handleBackButtonClick();
++      return true;
++    }
++  }
++
++  seek = (seekTargetMs: number) => {
++    if (this._vdoPlayerView) {
++      this._vdoPlayerView.seek(seekTargetMs);
++    }
++  }
++
++  /**
++  * @deprecated 
++  * Use {@link enterFullscreenV2} instead.
++  */
++  enterFullscreen = () => {
++    if (Platform.OS == "ios") {
++      console.warn("Method not supported for iOS");
++      return;
++    }
++    if (this.props.showNativeControls === false) {
++      console.warn('enterFullscreen method is deprecated. We advise handling fullscreen changes manually or utilizing our player with native controls which handles fullscreen automatically.');
++    } else {
++      console.warn('enterFullscreen method is deprecated. Please use enterFullscreenV2 instead.');
++    }
++    if (this._vdoPlayerView) {
++      this._vdoPlayerView.enterFullscreen();
++    }
++  }
++
++  /**
++  * Works only with player with native controls
++  */
++  enterFullscreenV2 = () => {
++    if (this._vdoPlayerView && !(this.props.showNativeControls === false)) {
++      this._vdoPlayerView.enterFullscreenV2();
++    }
++  }
++
++  /**
++  * @deprecated 
++  * Use {@link exitFullscreenV2} instead.
++  */
++  exitFullscreen = () => {
++    if (Platform.OS == "ios") {
++      console.warn("Method not supported for iOS");
++      return;
++    }
++    if (this.props.showNativeControls === false) {
++      console.warn('exitFullscreen method is deprecated. We advise handling fullscreen changes manually or utilizing our player with native controls which handles fullscreen automatically.');
++    } else {
++      console.warn('exitFullscreen method is deprecated. Please use exitFullscreenV2 instead.');
++    }
++    if (this._vdoPlayerView) {
++      this._vdoPlayerView.exitFullscreen();
++    }
++  }
++
++  /**
++  * Works only with player with native controls
++  */
++  exitFullscreenV2 = () => {
++    if (this._vdoPlayerView && !(this.props.showNativeControls === false)) {
++      this._vdoPlayerView.exitFullscreenV2();
++    }
++  }
++
++  getPlaybackProperties = () => {
++    if (Platform.OS == "ios") {
++      console.warn("Method not supported for iOS");
++      return;
++    }
++    if (this._vdoPlayerView) {
++      this._vdoPlayerView.getPlaybackProperties();
++    }
++  }
++
++  isAdaptive = async () => {
++    return new Promise(async (resolve) => {
++      await TrackSelection.isAdaptive((isAdaptive: boolean) => {
+         resolve(isAdaptive);
+       });
+     });
+   }
+ 
+-   getVideoQualities = async() => {
+-      return new Promise(async(resolve) => { await TrackSelection.getVideoQualities((videoQualities: Array<VdoType.VideoQuality>) => {
+-          resolve(videoQualities);
+-        });
++  getVideoQualities = async () => {
++    return new Promise(async (resolve) => {
++      await TrackSelection.getVideoQualities((videoQualities: Array<VdoType.VideoQuality>) => {
++        resolve(videoQualities);
+       });
++    });
++  }
++
++  getSelectedVideoQuality = async () => {
++    return new Promise(async (resolve) => {
++      await TrackSelection.getSelectedVideoQuality((selectedVideoQuality: VdoType.VideoQuality) => {
++        resolve(selectedVideoQuality);
++      });
++    });
++  }
++
++  setVideoQuality = (videoQuality: VdoType.VideoQuality) => {
++    if (this._vdoPlayerView) {
++      this._vdoPlayerView.setVideoQuality(videoQuality);
+     }
++  }
++
++  enableAdaptiveVideo = () => {
++    if (this._vdoPlayerView) {
++      this._vdoPlayerView.enableAdaptiveVideo();
++    }
++  }
+ 
+-   getSelectedVideoQuality = async() => {
+-      return new Promise(async(resolve) => { await TrackSelection.getSelectedVideoQuality((selectedVideoQuality: VdoType.VideoQuality) => {
+-          resolve(selectedVideoQuality);
+-        });
++  getSelectedAudioQuality = async () => {
++    if (Platform.OS == "ios") {
++      return new Promise(function (resolve, reject) {
++        reject("Method not supported for iOS");
+       });
+     }
++    return new Promise(async (resolve) => {
++      await TrackSelection.getSelectedAudioQuality((selectedAudioQuality: VdoType.AudioQuality) => {
++        resolve(selectedAudioQuality);
++      });
++    });
++  }
++
++  getCaptionLanguages = async () => {
++    return new Promise(async (resolve) => {
++      await TrackSelection.getCaptionLanguages((captionLanguages: Array<VdoType.CaptionLanguage>) => {
++        resolve(captionLanguages);
++      });
++    });
++  }
++
++  getSelectedCaptionLanguage = async () => {
++    return new Promise(async (resolve) => {
++      await TrackSelection.getSelectedCaptionLanguage((selectedCaptionLanguage: VdoType.CaptionLanguage) => {
++        resolve(selectedCaptionLanguage);
++      });
++    });
++  }
+ 
+-   setVideoQuality = (videoQuality: VdoType.VideoQuality) => {
+-      if (this._vdoPlayerView) {
+-        this._vdoPlayerView.setVideoQuality(videoQuality);
+-      }
++  setCaptionLanguage = (captionLanguage: VdoType.CaptionLanguage) => {
++    if (this._vdoPlayerView) {
++      this._vdoPlayerView.setCaptionLanguage(captionLanguage);
+     }
++  }
+ 
+-   enableAdaptiveVideo = () => {
+-      if (this._vdoPlayerView) {
+-        this._vdoPlayerView.enableAdaptiveVideo();
+-      }
++  disableCaptions = () => {
++    if (this._vdoPlayerView) {
++      this._vdoPlayerView.disableCaptions();
+     }
++  }
+ 
+-   getSelectedAudioQuality = async() => {
+-      if (Platform.OS == "ios" ) {
+-        return new Promise(function(resolve, reject) {
+-          reject("Method not supported for iOS");
+-        });
+-      }
+-      return new Promise(async(resolve) => { await TrackSelection.getSelectedAudioQuality((selectedAudioQuality: VdoType.AudioQuality) => {
+-          resolve(selectedAudioQuality);
+-        });
++  getDuration = async () => {
++    return new Promise(async (resolve) => {
++      await TrackSelection.getDuration((duration: number) => {
++        resolve(duration);
+       });
++    });
++  }
++
++  setAspectRatio = (aspectRatio: number) => {
++    if (Platform.OS == "ios") {
++      console.warn("Method not supported for iOS");
++      return;
++    }
++    if (this._vdoPlayerView) {
++      this._vdoPlayerView.setAspectRatio(aspectRatio);
+     }
++  }
+ 
+-   getCaptionLanguages = async() => {
+-     return new Promise(async(resolve) => { await TrackSelection.getCaptionLanguages((captionLanguages: Array<VdoType.CaptionLanguage>) => {
+-         resolve(captionLanguages);
+-       });
+-     });
+-   }
+-
+-   getSelectedCaptionLanguage = async() => {
+-     return new Promise(async(resolve) => { await TrackSelection.getSelectedCaptionLanguage((selectedCaptionLanguage: VdoType.CaptionLanguage) => {
+-       resolve(selectedCaptionLanguage);
+-     });
+-   });
+-   }
+-
+-   setCaptionLanguage = (captionLanguage: VdoType.CaptionLanguage) => {
+-     if (this._vdoPlayerView) {
+-       this._vdoPlayerView.setCaptionLanguage(captionLanguage);
+-     }
+-   }
+-
+-   disableCaptions = () => {
+-     if (this._vdoPlayerView) {
+-       this._vdoPlayerView.disableCaptions();
+-     }
+-   }
+-
+-   getDuration = async() => {
+-     return new Promise(async(resolve) => { await TrackSelection.getDuration((duration: number) => {
+-         resolve(duration);
+-       });
+-     });
+-   }
+-
+-   setAspectRatio = (aspectRatio: number) => {
+-      if (Platform.OS == "ios" ) {
+-        console.warn("Method not supported for iOS");
+-        return;
+-      }
+-      if (this._vdoPlayerView) {
+-        this._vdoPlayerView.setAspectRatio(aspectRatio);
+-      }
+-    }
+-
+-   getPlaybackPropertiesV2 = async() => {
+-    return new Promise(async(resolve) => { await VdoPlayer.getPlaybackPropertiesV2((playbackProperties: VdoType.PlaybackProperty) => {
++  getPlaybackPropertiesV2 = async () => {
++    return new Promise(async (resolve) => {
++      await VdoPlayer.getPlaybackPropertiesV2((playbackProperties: VdoType.PlaybackProperty) => {
+         resolve(playbackProperties);
+       });
+     });
+-   }
+-
+-   _onInitSuccess = (event: any) => {
+-     if (this.props.onInitializationSuccess) {
+-       this.props.onInitializationSuccess(event.nativeEvent);
+-     }
+-   }
+-
+-   _onInitFailure = (event: any) => {
+-     if (this.props.onInitializationFailure) {
+-       this.props.onInitializationFailure(event.nativeEvent);
+-     }
+-   }
+-
+-   _onLoading = (embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo, event: any) => {
+-     if (this.props.onLoading) {
+-       this.props.onLoading({embedInfo, ...event.nativeEvent});
+-     }
+-   }
+-
+-   _onLoaded = (embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo, event: any) => {
+-     if (this.props.onLoaded) {
+-       this.props.onLoaded({embedInfo, ...event.nativeEvent});
+-     }
+-   }
+-
+-   _onLoadError = (embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo, event: any) => {
+-     if (this.props.onLoadError) {
+-       this.props.onLoadError({embedInfo, ...event.nativeEvent});
+-     }
+-   }
+-
+-   _onPlayerStateChanged = (event: any) => {
+-     if (this.props.onPlayerStateChanged) {
+-       this.props.onPlayerStateChanged(event.nativeEvent);
+-     }
+-   }
+-
+-   _onProgress = (event: any) => {
+-     if (this.props.onProgress) {
+-       this.props.onProgress(event.nativeEvent);
+-     }
+-   }
+-
+-   _onBufferUpdate = (event: any) => {
+-     if (this.props.onBufferUpdate) {
+-       this.props.onBufferUpdate(event.nativeEvent);
+-     }
+-   }
+-
+-   _onPlaybackSpeedChanged = (event: any) => {
+-     if (this.props.onPlaybackSpeedChanged) {
+-       this.props.onPlaybackSpeedChanged(event.nativeEvent.playbackSpeed);
+-     }
+-   }
+-
+-   _onTracksChanged = (event: any) => {
+-     if (this.props.onTracksChanged) {
+-       this.props.onTracksChanged(event.nativeEvent);
+-     }
+-   }
+-
+-   _onMediaEnded = (embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo, event: any) => {
+-     if (this.props.onMediaEnded) {
+-       this.props.onMediaEnded({embedInfo, ...event.nativeEvent});
+-     }
+-   }
+-
+-   _onError = (embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo, event: any) => {
+-     if (this.props.onError) {
+-       this.props.onError({embedInfo, ...event.nativeEvent});
+-     }
+-   }
+-
+-   _onPlaybackProperties = (event: any) => {
+-     if (this.props.onPlaybackProperties) {
+-       this.props.onPlaybackProperties(event.nativeEvent);
+-     }
+-   }
+-
+-   _onEnterFullscreen = () => {
+-     this.setState({
+-       fullscreen: true
+-     });
+- 
+-     if (this.props.onEnterFullscreen) {
+-       this.props.onEnterFullscreen();
+-     }
+-   }
+-
+-   _onExitFullscreen = () => {
+-     this.setState({
+-       fullscreen: false
+-     });
+-     
+-     if (this.props.onExitFullscreen) {
+-       this.props.onExitFullscreen();
+-     }
+-   }
+-
+-   _onPictureInPictureModeChanged = (event: any) => {
++  }
++
++  _onInitSuccess = (event: any) => {
++    if (this.props.onInitializationSuccess) {
++      this.props.onInitializationSuccess(event.nativeEvent);
++    }
++  }
++
++  _onInitFailure = (event: any) => {
++    if (this.props.onInitializationFailure) {
++      this.props.onInitializationFailure(event.nativeEvent);
++    }
++  }
++
++  _onLoading = (embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo, event: any) => {
++    if (this.props.onLoading) {
++      this.props.onLoading({ embedInfo, ...event.nativeEvent });
++    }
++  }
++
++  _onLoaded = (embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo, event: any) => {
++    if (this.props.onLoaded) {
++      this.props.onLoaded({ embedInfo, ...event.nativeEvent });
++    }
++  }
++
++  _onLoadError = (embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo, event: any) => {
++    if (this.props.onLoadError) {
++      this.props.onLoadError({ embedInfo, ...event.nativeEvent });
++    }
++  }
++
++  _onPlayerStateChanged = (event: any) => {
++    if (this.props.onPlayerStateChanged) {
++      this.props.onPlayerStateChanged(event.nativeEvent);
++    }
++  }
++
++  _onProgress = (event: any) => {
++    if (this.props.onProgress) {
++      this.props.onProgress(event.nativeEvent);
++    }
++  }
++
++  _onBufferUpdate = (event: any) => {
++    if (this.props.onBufferUpdate) {
++      this.props.onBufferUpdate(event.nativeEvent);
++    }
++  }
++
++  _onPlaybackSpeedChanged = (event: any) => {
++    if (this.props.onPlaybackSpeedChanged) {
++      this.props.onPlaybackSpeedChanged(event.nativeEvent.playbackSpeed);
++    }
++  }
++
++  _onTracksChanged = (event: any) => {
++    if (this.props.onTracksChanged) {
++      this.props.onTracksChanged(event.nativeEvent);
++    }
++  }
++
++  _onMediaEnded = (embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo, event: any) => {
++    if (this.props.onMediaEnded) {
++      this.props.onMediaEnded({ embedInfo, ...event.nativeEvent });
++    }
++  }
++
++  _onError = (embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo, event: any) => {
++    if (this.props.onError) {
++      this.props.onError({ embedInfo, ...event.nativeEvent });
++    }
++  }
++
++  _onPlaybackProperties = (event: any) => {
++    if (this.props.onPlaybackProperties) {
++      this.props.onPlaybackProperties(event.nativeEvent);
++    }
++  }
++
++  _onEnterFullscreen = () => {
++    this.setState({
++      fullscreen: true
++    });
++
++    if (this.props.onEnterFullscreen) {
++      this.props.onEnterFullscreen();
++    }
++  }
++
++  _onExitFullscreen = () => {
++    this.setState({
++      fullscreen: false
++    });
++
++    if (this.props.onExitFullscreen) {
++      this.props.onExitFullscreen();
++    }
++  }
++
++  _onPictureInPictureModeChanged = (event: any) => {
+     this.setState({
+       isInPictureInPictureMode: event.nativeEvent.isInPictureInPictureMode
+     });
+@@ -411,67 +421,67 @@ class VdoPlayerView extends Component<MyProps, MyState> {
+     }
+   }
+ 
+-   render() {
+-     return (
+-       <Fragment>
+-       { 
+-       this.props.showNativeControls === false ? (
+-           <VdoPlayerSupportView ref={vdoPlayerView => this._vdoPlayerView = vdoPlayerView}
+-               {...this.props}
+-               onInitSuccess={this._onInitSuccess}
+-               onInitFailure={this._onInitFailure}
+-               onVdoLoading={((embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo) => (event: any) => this._onLoading(embedInfo, event))(this.props.embedInfo)}
+-               onVdoLoaded={((embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo) => (event: any) => this._onLoaded(embedInfo, event))(this.props.embedInfo)}
+-               onVdoLoadError={((embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo) => (event: any) => this._onLoadError(embedInfo, event))(this.props.embedInfo)}
+-               onVdoPlayerStateChanged={this._onPlayerStateChanged}
+-               onVdoProgress={this._onProgress}
+-               onVdoBufferUpdate={this._onBufferUpdate}
+-               onVdoPlaybackSpeedChanged={this._onPlaybackSpeedChanged}
+-               onVdoTracksChanged={this._onTracksChanged}
+-               onVdoMediaEnded={((embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo) => (event: any) => this._onMediaEnded(embedInfo, event))(this.props.embedInfo)}
+-               onVdoError={((embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo) => (event: any) => this._onError(embedInfo, event))(this.props.embedInfo)}
+-               onVdoPlaybackProperties={this._onPlaybackProperties}
+-               onVdoEnterFullscreen={this._onEnterFullscreen}
+-               onVdoExitFullscreen={this._onExitFullscreen}
+-               onVdoPictureInPictureModeChanged={this._onPictureInPictureModeChanged}
+-           />
+-       ) :
+-       (
+-           <VdoPlayerUIView ref={vdoPlayerView => this._vdoPlayerView = vdoPlayerView}
+-               {...this.props}
+-               style={this.props.style ? [styles.playerWithUserStyles, this.props.style] : styles.player}
+-               onInitSuccess={this._onInitSuccess}
+-               onInitFailure={this._onInitFailure}
+-               onVdoLoading={((embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo) => (event: any) => this._onLoading(embedInfo, event))(this.props.embedInfo)}
+-               onVdoLoaded={((embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo) => (event: any) => this._onLoaded(embedInfo, event))(this.props.embedInfo)}
+-               onVdoLoadError={((embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo) => (event: any) => this._onLoadError(embedInfo, event))(this.props.embedInfo)}
+-               onVdoPlayerStateChanged={this._onPlayerStateChanged}
+-               onVdoProgress={this._onProgress}
+-               onVdoBufferUpdate={this._onBufferUpdate}
+-               onVdoPlaybackSpeedChanged={this._onPlaybackSpeedChanged}
+-               onVdoTracksChanged={this._onTracksChanged}
+-               onVdoMediaEnded={((embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo) => (event: any) => this._onMediaEnded(embedInfo, event))(this.props.embedInfo)}
+-               onVdoError={((embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo) => (event: any) => this._onError(embedInfo, event))(this.props.embedInfo)}
+-               onVdoPlaybackProperties={this._onPlaybackProperties}
+-               onVdoEnterFullscreen={this._onEnterFullscreen}
+-               onVdoExitFullscreen={this._onExitFullscreen}
+-               onVdoPictureInPictureModeChanged={this._onPictureInPictureModeChanged}
+-           />
+-       )
+-       }
+-       </Fragment>
+-     );
+-   }
+- }
+-
+- if (NavigationContext) {
++  render() {
++    return (
++      <Fragment>
++        {
++          this.props.showNativeControls === false ? (
++            <VdoPlayerSupportView ref={vdoPlayerView => this._vdoPlayerView = vdoPlayerView}
++              {...this.props}
++              onInitSuccess={this._onInitSuccess}
++              onInitFailure={this._onInitFailure}
++              onVdoLoading={((embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo) => (event: any) => this._onLoading(embedInfo, event))(this.props.embedInfo)}
++              onVdoLoaded={((embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo) => (event: any) => this._onLoaded(embedInfo, event))(this.props.embedInfo)}
++              onVdoLoadError={((embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo) => (event: any) => this._onLoadError(embedInfo, event))(this.props.embedInfo)}
++              onVdoPlayerStateChanged={this._onPlayerStateChanged}
++              onVdoProgress={this._onProgress}
++              onVdoBufferUpdate={this._onBufferUpdate}
++              onVdoPlaybackSpeedChanged={this._onPlaybackSpeedChanged}
++              onVdoTracksChanged={this._onTracksChanged}
++              onVdoMediaEnded={((embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo) => (event: any) => this._onMediaEnded(embedInfo, event))(this.props.embedInfo)}
++              onVdoError={((embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo) => (event: any) => this._onError(embedInfo, event))(this.props.embedInfo)}
++              onVdoPlaybackProperties={this._onPlaybackProperties}
++              onVdoEnterFullscreen={this._onEnterFullscreen}
++              onVdoExitFullscreen={this._onExitFullscreen}
++              onVdoPictureInPictureModeChanged={this._onPictureInPictureModeChanged}
++            />
++          ) :
++            (
++              <VdoPlayerUIView ref={vdoPlayerView => this._vdoPlayerView = vdoPlayerView}
++                {...this.props}
++                style={this.props.style ? [styles.playerWithUserStyles, this.props.style] : styles.player}
++                onInitSuccess={this._onInitSuccess}
++                onInitFailure={this._onInitFailure}
++                onVdoLoading={((embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo) => (event: any) => this._onLoading(embedInfo, event))(this.props.embedInfo)}
++                onVdoLoaded={((embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo) => (event: any) => this._onLoaded(embedInfo, event))(this.props.embedInfo)}
++                onVdoLoadError={((embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo) => (event: any) => this._onLoadError(embedInfo, event))(this.props.embedInfo)}
++                onVdoPlayerStateChanged={this._onPlayerStateChanged}
++                onVdoProgress={this._onProgress}
++                onVdoBufferUpdate={this._onBufferUpdate}
++                onVdoPlaybackSpeedChanged={this._onPlaybackSpeedChanged}
++                onVdoTracksChanged={this._onTracksChanged}
++                onVdoMediaEnded={((embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo) => (event: any) => this._onMediaEnded(embedInfo, event))(this.props.embedInfo)}
++                onVdoError={((embedInfo: VdoType.EmbedInfo | VdoType.OfflineEmbedInfo) => (event: any) => this._onError(embedInfo, event))(this.props.embedInfo)}
++                onVdoPlaybackProperties={this._onPlaybackProperties}
++                onVdoEnterFullscreen={this._onEnterFullscreen}
++                onVdoExitFullscreen={this._onExitFullscreen}
++                onVdoPictureInPictureModeChanged={this._onPictureInPictureModeChanged}
++              />
++            )
++        }
++      </Fragment>
++    );
++  }
++}
++
++if (NavigationContext) {
+   VdoPlayerView.contextType = NavigationContext; // Assign the context type only if NavigationContext is available
+ }
+- VdoPlayerView.propTypes = VdoViewPropTypes;
++VdoPlayerView.propTypes = VdoViewPropTypes;
+ 
+- export default VdoPlayerView;
++export default VdoPlayerView;
+ 
+- const styles = StyleSheet.create({
++const styles = StyleSheet.create({
+   player: {
+     minHeight: (Dimensions.get('window').width / 16) * 9,
+     width: '100%',
