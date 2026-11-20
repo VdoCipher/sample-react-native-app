@@ -1,7 +1,7 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {StyleSheet, Text, View, Pressable, Modal, Platform, StatusBar, SafeAreaView, LayoutChangeEvent } from 'react-native';
 import { InferProps } from 'prop-types';
-import {VdoPlayerView} from 'vdocipher-rn-bridge';
+import {VdoPlayerView, VdoCastButton} from 'vdocipher-rn-bridge';
 import MatIcon from 'react-native-vector-icons/MaterialIcons';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { ErrorDescription } from './type';
@@ -36,6 +36,26 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
   const [seekbarPosition, setSeekbarPosition] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [playbackSpeed, setPlaybackSpeedState] = useState(1.0);
+  const [muted, setMuted] = useState(false);
+  const [castState, setCastState] = useState('noDevices');
+  const [castDeviceName, setCastDeviceName] = useState('');
+  const isCasting = castState === 'connected';
+
+  const _onCastStateChanged = (event: {state: string, deviceName?: string}) => {
+    setCastState(event.state);
+    setCastDeviceName(event.deviceName ?? '');
+    props.onCastStateChanged?.(event);
+  };
+
+  const _toggleMute = async () => {
+    const isMuted = await _player.current?.isMuted();
+    if (isMuted) {
+      _player.current?.unmute();
+    } else {
+      _player.current?.mute();
+    }
+    setMuted(!isMuted);
+  };
   const [isInPictureInPictureMode, setIsInPictureInPictureMode] = useState(false);
   const [isCaptionLanguageAvailable, setIsCaptionLanguageAvailable] = useState(false);
   const [isVideoTrackSelectionAvailable, setIsVideoTrackSelectionAvailable] = useState(false);
@@ -103,6 +123,7 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
   const _onLoaded = (metaData: {mediaInfo: MediaInfo}) => {
     setLoaded(true)
     setDuration( metaData.mediaInfo.duration / 1000)
+    _player.current?.isMuted().then(setMuted);
     // propInterval = setInterval(
     //   () => {
     //     _player.getPlaybackPropertiesV2().then((playbackProperties: PlaybackProperty) => {
@@ -414,7 +435,24 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
         onPlayerStateChanged={_onPlayerStateChanged}
         onProgress={_onProgress}
         onPictureInPictureModeChanged={_onPictureInPictureModeChanged}
+        chromecastEnabled
+        onCastStateChanged={_onCastStateChanged}
       />
+      {isCasting && !isInPictureInPictureMode && (
+        <View style={styles.cast.overlay}>
+          <Text style={styles.cast.text} numberOfLines={1}>
+            Connected to {castDeviceName || 'device'}
+          </Text>
+          <View style={styles.cast.row}>
+            <Pressable onPress={() => _player.current?.stopCasting()} style={styles.cast.btn}>
+              <Text style={styles.cast.btnText}>Disconnect</Text>
+            </Pressable>
+            <Pressable onPress={() => _player.current?.openCastControls()} style={styles.cast.btn}>
+              <Text style={styles.cast.btnText}>Cast controls</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
       {!isInPictureInPictureMode && (
         <View style={styles.controls.container}>
           <Pressable
@@ -464,6 +502,19 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
               />
             </Pressable>
           }
+          <VdoCastButton tint="#FFFFFF" style={styles.cast.button} />
+          <Pressable
+            onPress={_toggleMute}
+            accessible
+            accessibilityLabel="player-mute"
+            testID="player-mute">
+            <MatIcon
+              name={muted ? 'volume-off' : 'volume-up'}
+              style={styles.controls.speed}
+              size={26}
+              color="#FFF"
+            />
+          </Pressable>
           <Pressable
             onPress={_cyclePlaybackSpeed}
             accessible
@@ -630,6 +681,42 @@ const styles = {
       left: 6,
       height: 12,
       width: 12,
+    },
+  }),
+  cast: StyleSheet.create({
+    overlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 40,
+      backgroundColor: 'rgba(0,0,0,0.7)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    text: {
+      color: '#FFF',
+      fontSize: 16,
+      marginBottom: 10,
+    },
+    row: {
+      flexDirection: 'row',
+    },
+    btn: {
+      borderColor: '#FFF',
+      borderWidth: 1,
+      borderRadius: 4,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      marginHorizontal: 6,
+    },
+    btnText: {
+      color: '#FFF',
+    },
+    button: {
+      width: 30,
+      height: 30,
+      marginLeft: 10,
     },
   }),
 };

@@ -1,6 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import {StyleSheet, Text, SafeAreaView} from 'react-native';
 import VdoPlayerControls from './VdoPlayerControls';
+import {VdoCastMiniController} from 'vdocipher-rn-bridge';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import { RootStackParamList } from './type';
 
@@ -8,6 +9,7 @@ export default function JSControlsScreen(props: NativeStackScreenProps<RootStack
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isInPictureInPictureMode, setIsInPictureInPictureMode] = useState(false);
+  const [isCasting, setIsCasting] = useState(false);
 
   useEffect(() => {
     console.log('JSControlsScreen did mount');
@@ -56,11 +58,15 @@ export default function JSControlsScreen(props: NativeStackScreenProps<RootStack
         onEnterFullscreen={_onEnterFullscreen}
         onExitFullscreen={_onExitFullscreen}
         onPictureInPictureModeChanged={_onPictureInPictureModeChanged}
+        onCastStateChanged={(event: {state: string}) => setIsCasting(event.state === 'connected')}
       />
       {!isFullscreen && (
         <Text style={styles.description}>
           The ui controls for the player are react-native components
         </Text>
+      )}
+      {isCasting && !isFullscreen && (
+        <VdoCastMiniController style={styles.miniController} />
       )}
     </SafeAreaView>
   );
@@ -79,6 +85,13 @@ const styles = StyleSheet.create({
   playerFullscreen: {
     height: '100%',
     width: '100%',
+  },
+  miniController: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 72,
   },
   description: {
     fontSize: 20,

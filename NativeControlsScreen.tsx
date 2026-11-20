@@ -1,5 +1,5 @@
-import React, {useEffect} from 'react';
-import {StyleSheet, Text, SafeAreaView} from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {StyleSheet, Text, SafeAreaView, Button} from 'react-native';
 import {VdoPlayerView} from 'vdocipher-rn-bridge';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import { RootStackParamList } from './type';
@@ -7,6 +7,17 @@ import { RootStackParamList } from './type';
 
 export default function NativeControlsScreen(props: NativeStackScreenProps<RootStackParamList, 'NativeControls'>) {
   let _player: any;
+  const [muted, setMuted] = useState(false);
+
+  const _toggleMute = async () => {
+    const isMuted = await _player?.isMuted();
+    if (isMuted) {
+      _player?.unmute();
+    } else {
+      _player?.mute();
+    }
+    setMuted(!isMuted);
+  };
 
   useEffect(() => {
     console.log('NativeControlsScreen did mount');
@@ -29,7 +40,10 @@ export default function NativeControlsScreen(props: NativeStackScreenProps<RootS
           console.log('init failure', error)
         }
         onLoading={(args: any) => console.log('loading')}
-        onLoaded={(args: any) => console.log('loaded')}
+        onLoaded={(args: any) => {
+          console.log('loaded');
+          _player?.isMuted().then(setMuted);
+        }}
         onLoadError={({errorDescription}: any) =>
           console.log('load error', errorDescription)
         }
@@ -44,6 +58,7 @@ export default function NativeControlsScreen(props: NativeStackScreenProps<RootS
         onEnterFullscreen={() => console.log('onEnterFullscreen')}
         onExitFullscreen={() => console.log('onExitFullscreen')}
       />
+      <Button title={muted ? 'Unmute' : 'Mute'} onPress={_toggleMute} />
       <Text style={styles.description}>
         The ui controls for the player are embedded inside the native view
       </Text>
