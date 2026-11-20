@@ -1,7 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import {StyleSheet, Text, View, FlatList} from 'react-native';
 import {VdoDownload} from 'vdocipher-rn-bridge';
-import { Track, DownloadOptions, DownloadStatus, OfflineEmbedInfo } from 'vdocipher-rn-bridge/type';
+import { Track, DownloadOptions, DownloadStatus, OfflineEmbedInfo, EnqueueSelections } from 'vdocipher-rn-bridge/type';
 import DownloadListItem from './DownloadListItem';
 import { DownloadData } from './type'
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -29,6 +29,11 @@ const makeOfflineEmbedInfo = (mediaId: string, enableAutoResume?: boolean) : Off
     offline: true,
     mediaId,
     enableAutoResume,
+    startMuted: false,
+    // Android only: title, description and poster for the background playback notification.
+    // mediaMetadata: {title: 'Video title', description: 'Video description', posterUrl: 'https://example.com/poster.jpg'},
+    // Android only: stops this offline playback from sending analytics.
+    // disableAnalytics: true,
   };
 };
 
@@ -162,11 +167,18 @@ export default function DownloadsScreen(props: NativeStackScreenProps<RootStackP
   const _enqueueDownload = (otp: string, playbackInfo: string) => {
     console.log('enqueue download');
     VdoDownload.getDownloadOptions({otp, playbackInfo /* ,customPlayerId: "avaI83RCHxfvLwhC"*/})
-      .then(({downloadOptions, enqueue}: {downloadOptions: DownloadOptions, enqueue: (downloadSelections: {selections: Array<number>}) => void}) => {
+      .then(({downloadOptions, enqueue}: {downloadOptions: DownloadOptions, enqueue: (downloadSelections: EnqueueSelections) => Promise<void>}) => {
         console.log('Got options', downloadOptions);
         const selections = _getSelection(downloadOptions.availableTracks);
         console.log('selections', selections);
-        return enqueue({selections});
+        return enqueue({
+          selections,
+          // Android only: shown in the download notification.
+          notificationTitle: 'VdoCipher sample download',
+          notificationDescription: 'Downloaded from the sample app',
+          // Android only: stops this download from sending analytics.
+          // disableAnalytics: true,
+        });
       })
       .then(() => console.log('enqueue success'))
       .catch((errorDescription: {errorCode: number, errorMsg: string, httpStatusCode: number}) => {

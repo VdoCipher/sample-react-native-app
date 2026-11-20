@@ -24,6 +24,8 @@ export default function HomeScreen(props: NativeStackScreenProps<RootStackParamL
 
   useEffect(() => {
     // VdoPlayerSettings.applySettings(playerSettings);
+    // Shows rewind, play/pause and forward buttons in the picture-in-picture window (Android only).
+    VdoPlayerSettings.setPictureInPictureActionsEnabled(true);
     // VdoPreCacheManager.cacheVideo(preCacheSettings);
     fetch('https://dev.vdocipher.com/api/site/homepage_video')
     .then(res => res.json())
@@ -35,7 +37,15 @@ export default function HomeScreen(props: NativeStackScreenProps<RootStackParamL
   }, []);
 
   var ready = otp != '';
-    const embedInfo: EmbedInfo = {otp, playbackInfo};
+    const embedInfo: EmbedInfo = {
+      otp,
+      playbackInfo,
+      startMuted: false,
+      // Android only: title, description and poster for the background playback notification.
+      // mediaMetadata: {title: 'Video title', description: 'Video description', posterUrl: 'https://example.com/poster.jpg'},
+      // Android only: stops this playback from sending analytics.
+      // disableAnalytics: true,
+    };
     const isPlatformIOS = Platform.OS == "ios";
     return (
       <SafeAreaView style={styles.container}>

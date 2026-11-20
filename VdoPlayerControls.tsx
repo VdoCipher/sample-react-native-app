@@ -1,7 +1,7 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {StyleSheet, Text, View, TouchableWithoutFeedback, Modal, Platform, StatusBar, SafeAreaView, LayoutChangeEvent } from 'react-native';
 import { InferProps } from 'prop-types';
-import {VdoPlayerView} from 'vdocipher-rn-bridge';
+import {VdoPlayerView, VdoCastButton} from 'vdocipher-rn-bridge';
 import MatIcon from 'react-native-vector-icons/MaterialIcons';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { ErrorDescription } from './type';
@@ -33,6 +33,17 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
   const [speed, setSpeed] = useState(1);
   const [seekbarPosition, setSeekbarPosition] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [muted, setMuted] = useState(false);
+
+  const _toggleMute = async () => {
+    const isMuted = await _player.current?.isMuted();
+    if (isMuted) {
+      _player.current?.unmute();
+    } else {
+      _player.current?.mute();
+    }
+    setMuted(!isMuted);
+  };
   const [isInPictureInPictureMode, setIsInPictureInPictureMode] = useState(false);
   const [isCaptionLanguageAvailable, setIsCaptionLanguageAvailable] = useState(false);
   const [isVideoTrackSelectionAvailable, setIsVideoTrackSelectionAvailable] = useState(false);
@@ -50,6 +61,15 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
   const [type, setType] = useState('video');
   const [initial, setInitial] = useState(-1);
   const [error, setError] = useState({});
+  const [castState, setCastState] = useState('noDevices');
+  const [castDeviceName, setCastDeviceName] = useState('');
+  const [actuallyPlaying, setActuallyPlaying] = useState(false);
+  const isCasting = castState === 'connected';
+  const [layoutWidth, setLayoutWidth] = useState(0);
+  const onLayout = useCallback((event: LayoutChangeEvent) => {
+    setLayoutWidth(event.nativeEvent.layout.width);
+  }, []);
+  _seekbarWidth = layoutWidth;
 
   useEffect(() => {
     console.log('VdoPlayerControls did mount');
@@ -68,6 +88,21 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
     }
   }, [playWhenReady]);
 
+  // While casting, remote position updates arrive ~1/s; tick locally in between and snap on onProgress.
+  useEffect(() => {
+    if (!isCasting || !actuallyPlaying || ended || !duration) return;
+    const id = setInterval(() => {
+      setPosition(prev => {
+        const next = Math.min(prev + 1, duration);
+        if (_seekbarWidth) {
+          setSeekbarPosition(_seekbarWidth * (next / duration));
+        }
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [isCasting, actuallyPlaying, ended, duration]);
+
   const _onInitSuccess = () => {
     setInit(true)
   };
@@ -84,6 +119,7 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
   const _onLoaded = (metaData: {mediaInfo: MediaInfo}) => {
     setLoaded(true)
     setDuration( metaData.mediaInfo.duration / 1000)
+    _player.current?.isMuted().then(setMuted);
 
     _isCaptionLanguageAvailable();
     _isVideoTrackSelectionAvailable();
@@ -97,10 +133,17 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
     const {playerState} = newState;
     setBuffering(playerState === 'buffering')
     setEnded(playerState === 'ended')
+    setActuallyPlaying(newState.playWhenReady && playerState === 'ready')
 
     if (playerState === 'ended') {
       setPlayWhenReady(false)
     }
+  };
+
+  const _onCastStateChanged = (event: {state: string, deviceName?: string}) => {
+    setCastState(event.state);
+    setCastDeviceName(event.deviceName ?? '');
+    props.onCastStateChanged?.(event);
   };
 
   const _onProgress = (progress: {currentTime: number}) => {
@@ -324,14 +367,6 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
     }
   }
 
-  const useComponentWidth = () => {
-    const [layoutWidth, setLayoutWidth] = useState(0);
-    const onLayout = useCallback((event: LayoutChangeEvent) => {
-      setLayoutWidth(event.nativeEvent.layout.width);
-    }, []);
-      return { layoutWidth, onLayout };
-  };
-
   const _renderModal = () => {
     return (
       <View style={styles.player.centeredView}>
@@ -359,8 +394,6 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
   }
 
   const _renderSeekbar = () => {
-    const {layoutWidth, onLayout} = useComponentWidth();
-    _seekbarWidth = layoutWidth;
     return (
       <TouchableWithoutFeedback onPress={_onProgressTouch}>
         <View style={styles.seekbar.container}>
@@ -398,7 +431,22 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
         onPlayerStateChanged={_onPlayerStateChanged}
         onProgress={_onProgress}
         onPictureInPictureModeChanged={_onPictureInPictureModeChanged}
+        chromecastEnabled
+        onCastStateChanged={_onCastStateChanged}
       />
+      {isCasting && (
+        <View style={styles.cast.overlay}>
+          <MatIcon name="cast-connected" size={40} color="#FFF" />
+          <Text style={styles.cast.text} numberOfLines={1}>
+            Connected to {castDeviceName || 'device'}
+          </Text>
+          <TouchableWithoutFeedback onPress={() => _player.current?.stopCasting()}>
+            <View style={styles.cast.disconnectBtn}>
+              <Text style={styles.cast.disconnectText}>Disconnect</Text>
+            </View>
+          </TouchableWithoutFeedback>
+        </View>
+      )}
       {!isInPictureInPictureMode && (
         <View style={styles.controls.container}>
           <TouchableWithoutFeedback onPress={_onPlayButtonTouch}>
@@ -416,7 +464,7 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
           <Text style={styles.controls.duration}>
             {digitalTime(Math.floor(duration))}
           </Text>
-          { isCaptionLanguageAvailable &&
+          { isCaptionLanguageAvailable && !isCasting &&
             <TouchableWithoutFeedback
               onPress={() => _showCaptionTrackSelectionDialog()}>
               <MatIcon
@@ -427,7 +475,7 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
               />
             </TouchableWithoutFeedback>
           }
-          { isVideoTrackSelectionAvailable &&
+          { isVideoTrackSelectionAvailable && !isCasting &&
             <TouchableWithoutFeedback
               onPress={() => _showVideoTrackSelectionDialog()}>
               <MatIcon
@@ -438,6 +486,15 @@ export default function VdoPlayerControls(props: InferProps<typeof MyPropTypes>)
               />
             </TouchableWithoutFeedback>
           }
+          <TouchableWithoutFeedback onPress={_toggleMute}>
+            <MatIcon
+              name={muted ? 'volume-off' : 'volume-up'}
+              style={styles.controls.quality}
+              size={26}
+              color="#FFF"
+            />
+          </TouchableWithoutFeedback>
+          <VdoCastButton tint="#FFFFFF" style={styles.controls.cast} />
           <TouchableWithoutFeedback onPress={_toggleFullscreen}>
             <MatIcon
               name={isFullscreen ? 'fullscreen-exit' : 'fullscreen'}
@@ -553,6 +610,40 @@ const styles = {
     },
     quality: {
       marginLeft: 10,
+    },
+    cast: {
+      width: 30,
+      height: 30,
+      marginLeft: 10,
+    },
+  }),
+  cast: StyleSheet.create({
+    overlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.85)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    text: {
+      color: '#FFF',
+      fontSize: 16,
+      marginTop: 8,
+      marginBottom: 14,
+      paddingHorizontal: 16,
+    },
+    disconnectBtn: {
+      backgroundColor: '#B00020',
+      borderRadius: 6,
+      paddingHorizontal: 20,
+      paddingVertical: 8,
+    },
+    disconnectText: {
+      color: '#FFF',
+      fontWeight: 'bold',
     },
   }),
   seekbar: StyleSheet.create({
